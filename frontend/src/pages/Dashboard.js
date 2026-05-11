@@ -26,7 +26,7 @@ const handleAddNote = async () => {
   try {
 
     await axios.post(
-      "http://localhost:8080/addNote",
+      "https://devvault1-aeaj.onrender.com/addNote",
       noteData
     );
 
@@ -48,7 +48,7 @@ const fetchNotes = async () => {
   try {
 
     const response = await axios.get(
-      `http://localhost:8080/getNotes/${email}`
+      `https://devvault1-aeaj.onrender.com/getNotes/${email}`
     );
 
     setNotes(response.data);
@@ -64,7 +64,7 @@ const fetchUnreadCount = async () => {
   try {
 
     const response = await axios.get(
-      `http://localhost:8080/unreadCount/${email}`
+      `https://devvault1-aeaj.onrender.com/unreadCount/${email}`
     );
 
     setUnreadCount(response.data);

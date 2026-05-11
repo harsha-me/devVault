@@ -24,7 +24,7 @@ function PreviousNotes() {
   const fetchNotes = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/getNotes/${email}`
+        `https://devvault1-aeaj.onrender.com/getNotes/${email}`
       );
 
       setNotes(response.data);
@@ -37,7 +37,7 @@ function PreviousNotes() {
   try {
 
     const response = await axios.get(
-      "http://localhost:8080/users"
+      "https://devvault1-aeaj.onrender.com/users"
     );
 
     setUsers(response.data);
@@ -50,7 +50,7 @@ function PreviousNotes() {
 };
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:8080/deleteNote/${id}`);
+      await axios.delete(`https://devvault1-aeaj.onrender.com/deleteNote/${id}`);
 
       fetchNotes();
     } catch (error) {
@@ -73,7 +73,7 @@ function PreviousNotes() {
 
     try {
       await axios.put(
-        `http://localhost:8080/updateNote/${editingId}`,
+        `https://devvault1-aeaj.onrender.com/updateNote/${editingId}`,
         updatedNote
       );
 
@@ -108,7 +108,7 @@ const handleSendNote = async (receiverEmail) => {
   try {
 
     await axios.post(
-      "http://localhost:8080/shareNote",
+      "https://devvault1-aeaj.onrender.com/shareNote",
       sharedData
     );
 

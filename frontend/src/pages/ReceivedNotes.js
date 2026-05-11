@@ -12,7 +12,7 @@ function ReceivedNotes() {
     try {
 
       const response = await axios.get(
-        `http://localhost:8080/receivedNotes/${email}`
+        `https://devvault1-aeaj.onrender.com/receivedNotes/${email}`
       );
 
       setReceivedNotes(response.data);
@@ -28,7 +28,7 @@ function ReceivedNotes() {
   try {
 
     await axios.put(
-      `http://localhost:8080/markAsRead/${email}`
+      `https://devvault1-aeaj.onrender.com/markAsRead/${email}`
     );
 
   } catch (error) {
