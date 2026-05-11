@@ -87,7 +87,7 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 
-}, []);
+}, [fetchUnreadCount]);
 
   if (!token) {
     return <Navigate to="/login" />;

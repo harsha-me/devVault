@@ -43,7 +43,7 @@ function ReceivedNotes() {
     fetchReceivedNotes();
      markAsRead();
 
-  }, []);
+  }, [fetchReceivedNotes, markAsRead]);
 
   return (
 

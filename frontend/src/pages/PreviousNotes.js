@@ -131,7 +131,7 @@ const handleSendNote = async (receiverEmail) => {
 
   fetchUsers();
 
-}, []);
+}, [fetchNotes, fetchUsers]);
 
   return (
     <div className="min-h-screen bg-black text-white p-10">
