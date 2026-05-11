@@ -1,18 +1,20 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "https://devvault1-aeaj.onrender.com";
+
 function ReceivedNotes() {
 
   const [receivedNotes, setReceivedNotes] = useState([]);
 
   const email = localStorage.getItem("email");
 
-  const fetchReceivedNotes = async () => {
+  const fetchReceivedNotes = useCallback(async () => {
 
     try {
 
       const response = await axios.get(
-        `https://devvault1-aeaj.onrender.com/receivedNotes/${email}`
+        `${API_BASE}/receivedNotes/${email}`
       );
 
       setReceivedNotes(response.data);
@@ -22,13 +24,14 @@ function ReceivedNotes() {
       console.log(error);
 
     }
-  };
-  const markAsRead = async () => {
+  }, [email]);
+
+  const markAsRead = useCallback(async () => {
 
   try {
 
     await axios.put(
-      `https://devvault1-aeaj.onrender.com/markAsRead/${email}`
+      `${API_BASE}/markAsRead/${email}`
     );
 
   } catch (error) {
@@ -36,7 +39,7 @@ function ReceivedNotes() {
     console.log(error);
 
   }
-};
+}, [email]);
 
   useEffect(() => {
 
