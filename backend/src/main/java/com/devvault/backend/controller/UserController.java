@@ -10,7 +10,7 @@ import com.devvault.backend.jwt.JwtUtil;
 
 import java.util.List;
 @RestController
-@CrossOrigin("*")
+
 public class UserController {
 
     @Autowired
