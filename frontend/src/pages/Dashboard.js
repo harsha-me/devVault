@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import {Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "https://devvault1-aeaj.onrender.com";
+
 function Dashboard() {
 
   const token = localStorage.getItem("token");
@@ -26,7 +28,7 @@ const handleAddNote = async () => {
   try {
 
     await axios.post(
-      "https://devvault1-aeaj.onrender.com/addNote",
+      `${API_BASE}/addNote`,
       noteData
     );
 
@@ -43,12 +45,12 @@ const handleAddNote = async () => {
 
   }
 };
-const fetchNotes = async () => {
+const fetchNotes = useCallback(async () => {
 
   try {
 
     const response = await axios.get(
-      `https://devvault1-aeaj.onrender.com/getNotes/${email}`
+      `${API_BASE}/getNotes/${email}`
     );
 
     setNotes(response.data);
@@ -58,13 +60,14 @@ const fetchNotes = async () => {
     console.log(error);
 
   }
-};
+}, [email]);
+
 const fetchUnreadCount = useCallback(async () => {
 
   try {
 
     const response = await axios.get(
-      `https://devvault1-aeaj.onrender.com/unreadCount/${email}`
+      `${API_BASE}/unreadCount/${email}`
     );
 
     setUnreadCount(response.data);
@@ -74,7 +77,8 @@ const fetchUnreadCount = useCallback(async () => {
     console.log(error);
 
   }
-},[]);
+},[email]);
+
 useEffect(() => {
 
   fetchUnreadCount();
@@ -129,11 +133,11 @@ useEffect(() => {
   className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition duration-300"
 >
   Received Notes
-{unreadCount > 0 && (
-  <span className="ml-2 bg-red-600 px-2 py-1 rounded-full text-sm">
-    {unreadCount}
-  </span>
-)}
+  {unreadCount > 0 && (
+    <span className="ml-2 bg-red-600 px-2 py-1 rounded-full text-sm">
+      {unreadCount}
+    </span>
+  )}
 </Link>
 
         <button
@@ -153,10 +157,11 @@ useEffect(() => {
         Welcome Back 👋
       </h2>
 
-      <p className="text-gray-400 text-lg mb-10"
-      
-      >
-        <div className="bg-gray-900 p-6 rounded-2xl mb-10">
+      <p className="text-gray-400 text-lg mb-10">
+        Your authentication system is fully operational.
+      </p>
+
+      <div className="bg-gray-900 p-6 rounded-2xl mb-10">
 
   <h3 className="text-2xl font-bold mb-5">
     Add New Note 📝
@@ -213,10 +218,8 @@ useEffect(() => {
   ))}
 
 </div>
-        Your authentication system is fully operational.
-      </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
 
         <div className="bg-gray-900 p-6 rounded-2xl shadow-lg">
 
