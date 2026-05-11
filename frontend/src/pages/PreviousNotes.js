@@ -8,6 +8,8 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "https://devvault1-aeaj.onrender.com";
+
 function PreviousNotes() {
   const [notes, setNotes] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -24,20 +26,20 @@ function PreviousNotes() {
   const fetchNotes = useCallback(async () => {
     try {
       const response = await axios.get(
-        `https://devvault1-aeaj.onrender.com/getNotes/${email}`
+        `${API_BASE}/getNotes/${email}`
       );
 
       setNotes(response.data);
     } catch (error) {
       console.log(error);
     }
-  }, []);
+  }, [email]);
   const fetchUsers = useCallback(async () => {
 
   try {
 
     const response = await axios.get(
-      "https://devvault1-aeaj.onrender.com/users"
+      `${API_BASE}/users`
     );
 
     setUsers(response.data);
@@ -50,7 +52,7 @@ function PreviousNotes() {
 },[]);
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`https://devvault1-aeaj.onrender.com/deleteNote/${id}`);
+      await axios.delete(`${API_BASE}/deleteNote/${id}`);
 
       fetchNotes();
     } catch (error) {
@@ -73,7 +75,7 @@ function PreviousNotes() {
 
     try {
       await axios.put(
-        `https://devvault1-aeaj.onrender.com/updateNote/${editingId}`,
+        `${API_BASE}/updateNote/${editingId}`,
         updatedNote
       );
 
@@ -108,7 +110,7 @@ const handleSendNote = async (receiverEmail) => {
   try {
 
     await axios.post(
-      "https://devvault1-aeaj.onrender.com/shareNote",
+      `${API_BASE}/shareNote`,
       sharedData
     );
 
@@ -226,6 +228,7 @@ const handleSendNote = async (receiverEmail) => {
           </div>
         ))}
       </div>
+      
       {showShareBox && (
 
   <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center">
