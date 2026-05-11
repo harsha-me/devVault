@@ -14,6 +14,7 @@ function Dashboard() {
 const [content, setContent] = useState("");
 
 const [notes, setNotes] = useState([]);
+const [unreadCount, setUnreadCount] = useState(0);
 const handleAddNote = async () => {
 
   const noteData = {
@@ -58,9 +59,33 @@ const fetchNotes = async () => {
 
   }
 };
+const fetchUnreadCount = async () => {
+
+  try {
+
+    const response = await axios.get(
+      `http://localhost:8080/unreadCount/${email}`
+    );
+
+    setUnreadCount(response.data);
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+};
 useEffect(() => {
 
-  fetchNotes();
+  fetchUnreadCount();
+
+  const interval = setInterval(() => {
+
+    fetchUnreadCount();
+
+  }, 5000);
+
+  return () => clearInterval(interval);
 
 }, []);
 
@@ -92,6 +117,24 @@ useEffect(() => {
         <span className="text-gray-300">
           {email}
         </span>
+        <Link
+  to="/previous-notes"
+  className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition duration-300"
+>
+  Previous Notes
+</Link>
+
+<Link
+  to="/received-notes"
+  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition duration-300"
+>
+  Received Notes
+{unreadCount > 0 && (
+  <span className="ml-2 bg-red-600 px-2 py-1 rounded-full text-sm">
+    {unreadCount}
+  </span>
+)}
+</Link>
 
         <button
           onClick={handleLogout}

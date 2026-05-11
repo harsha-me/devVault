@@ -4,6 +4,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import PreviousNotes from "./pages/PreviousNotes";
+import ReceivedNotes from "./pages/ReceivedNotes";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/previous-notes" element={<PreviousNotes />} />
-
+        <Route path="/received-notes" element={<ReceivedNotes />} />
       </Routes>
 
     </BrowserRouter>

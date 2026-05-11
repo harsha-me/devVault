@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.devvault.backend.jwt.JwtUtil;
+
+
+import java.util.List;
 @RestController
 @CrossOrigin("*")
 public class UserController {
@@ -14,6 +17,7 @@ public class UserController {
     private UserRepository userRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+   
 
     @PostMapping("/signup")
     public User signup(@RequestBody User user) {
@@ -30,7 +34,7 @@ public String login(@RequestBody User user) {
     if (existingUser == null) {
         return "User Not Found";
     }
-
+    
     if (passwordEncoder.matches(user.getPassword(), existingUser.getPassword())) {
 
     String token = JwtUtil.generateToken(existingUser.getEmail());
@@ -41,5 +45,11 @@ public String login(@RequestBody User user) {
 
     return "Invalid Password";
 }
+
+}
+@GetMapping("/users")
+public List<User> getAllUsers() {
+
+    return userRepository.findAll();
 }
 }
