@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -21,7 +21,7 @@ function PreviousNotes() {
 
   const email = localStorage.getItem("email");
 
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     try {
       const response = await axios.get(
         `https://devvault1-aeaj.onrender.com/getNotes/${email}`
@@ -31,8 +31,8 @@ function PreviousNotes() {
     } catch (error) {
       console.log(error);
     }
-  };
-  const fetchUsers = async () => {
+  }, []);
+  const fetchUsers = useCallback(async () => {
 
   try {
 
@@ -47,7 +47,7 @@ function PreviousNotes() {
     console.log(error);
 
   }
-};
+},[]);
   const handleDelete = async (id) => {
     try {
       await axios.delete(`https://devvault1-aeaj.onrender.com/deleteNote/${id}`);

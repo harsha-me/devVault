@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -59,7 +59,7 @@ const fetchNotes = async () => {
 
   }
 };
-const fetchUnreadCount = async () => {
+const fetchUnreadCount = useCallback(async () => {
 
   try {
 
@@ -74,7 +74,7 @@ const fetchUnreadCount = async () => {
     console.log(error);
 
   }
-};
+},[]);
 useEffect(() => {
 
   fetchUnreadCount();
