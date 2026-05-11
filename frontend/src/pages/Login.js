@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
-import { Link,useNavigate } from "react-router-dom"; 
+import { Link,useNavigate } from "react-router-dom";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "https://devvault1-aeaj.onrender.com";
 
 function Login() {
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ function Login() {
     try {
 
       const response = await axios.post(
-        "https://devvault1-aeaj.onrender.com/login",
+        `${API_BASE}/login`,
         loginData
       );
 
