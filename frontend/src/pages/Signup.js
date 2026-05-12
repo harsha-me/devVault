@@ -2,6 +2,8 @@ import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "https://devvault1-aeaj.onrender.com";
+
 function Signup() {
 
   const [name, setName] = useState("");
@@ -21,7 +23,7 @@ function Signup() {
     try {
 
       const response = await axios.post(
-        "https://devvault1-aeaj.onrender.com/signup",
+        `${API_BASE}/signup`,
         userData
       );
 
