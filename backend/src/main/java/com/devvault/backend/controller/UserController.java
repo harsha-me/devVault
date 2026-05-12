@@ -13,7 +13,7 @@ import java.util.List;
 @CrossOrigin(
     origins = {
         "http://localhost:3000",
-        "https://dev-vault-theta.vercel.app"
+        "https://dev-vault-git-main-harsha-mes-projects.vercel.app"
     },
     allowedHeaders = "*",
     methods = {
@@ -31,7 +31,7 @@ public class UserController {
     private UserRepository userRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
-   
+    
 
     @PostMapping("/signup")
     public User signup(@RequestBody User user) {
