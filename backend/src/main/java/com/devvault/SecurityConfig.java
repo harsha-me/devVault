@@ -1,7 +1,5 @@
 package com.devvault;
 
-
-
 import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
@@ -20,7 +18,10 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true);
 
-        config.setAllowedOriginPatterns(Arrays.asList("*"));
+        config.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",
+            "https://dev-vault-theta.vercel.app"
+        ));
 
         config.setAllowedHeaders(Arrays.asList("*"));
 
