@@ -1,7 +1,6 @@
-package com.devvault;
+package com.devvault.backend.config;
 
 import java.util.Arrays;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -20,7 +19,7 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
-            "https://dev-vault-theta.vercel.app"
+            "https://dev-vault-git-main-harsha-mes-projects.vercel.app"
         ));
 
         config.setAllowedHeaders(Arrays.asList("*"));
