@@ -19,7 +19,8 @@ public class SecurityConfig {
 
         config.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
-            "https://dev-vault-harsha-mes-projects.vercel.app"
+            "https://dev-vault-harsha-mes-projects.vercel.app",
+            "https://devvault1-aeaj.onrender.com"
         ));
 
         config.setAllowedHeaders(Arrays.asList("*"));
