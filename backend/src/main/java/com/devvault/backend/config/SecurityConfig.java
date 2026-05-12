@@ -7,7 +7,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 
 @Configuration
 public class SecurityConfig {
@@ -20,9 +20,9 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
 
         config.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "https://dev-vault-git-main-harsha-mes-projects.vercel.app"
-        ));
+    "http://localhost:3000",
+    "https://dev-vault-harsha-mes-projects.vercel.app"
+));
 
         config.setAllowedHeaders(Arrays.asList("*"));
 
