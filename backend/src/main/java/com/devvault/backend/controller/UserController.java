@@ -6,9 +6,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.devvault.backend.jwt.JwtUtil;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 
 import java.util.List;
+@CrossOrigin(
+    origins = {
+        "http://localhost:3000",
+        "https://dev-vault-theta.vercel.app"
+    },
+    allowedHeaders = "*",
+    methods = {
+        RequestMethod.GET,
+        RequestMethod.POST,
+        RequestMethod.PUT,
+        RequestMethod.DELETE
+    }
+)
 @RestController
 
 public class UserController {
