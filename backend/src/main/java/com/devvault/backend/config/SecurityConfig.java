@@ -35,32 +35,19 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration config = new CorsConfiguration();
+    CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowCredentials(false);
+    config.addAllowedOriginPattern("*");
+    config.addAllowedHeader("*");
+    config.addAllowedMethod("*");
 
-        config.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "http://localhost:8080",
-            "https://dev-vault-theta.vercel.app",
-            "https://dev-vault-git-main-harsha-mes-projects.vercel.app",
-            "https://dev-vault-vemrgn1pf-harsha-mes-projects.vercel.app",
-            "https://devvault1-aeaj.onrender.com"
-        ));
+    UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
 
-        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization", "Accept"));
+    source.registerCorsConfiguration("/**", config);
 
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-
-        config.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
-        source.registerCorsConfiguration("/**", config);
-
-        return source;
-    }
+    return source;
+}
 }
