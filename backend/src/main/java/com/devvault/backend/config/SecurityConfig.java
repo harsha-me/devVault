@@ -49,7 +49,7 @@ public class SecurityConfig {
             "https://devvault1-aeaj.onrender.com"
         ));
 
-        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization", "*"));
+        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization"));
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
