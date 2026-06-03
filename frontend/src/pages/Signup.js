@@ -9,10 +9,14 @@ function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSignup = async (e) => {
 
     e.preventDefault();
+    setLoading(true);
+    setError("");
 
     const userData = {
       name,
@@ -21,13 +25,21 @@ function Signup() {
     };
 
     try {
+      console.log("Making signup request to:", `${API_BASE}/signup`);
+      console.log("Request data:", userData);
 
       const response = await axios.post(
         `${API_BASE}/signup`,
-        userData
+        userData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000
+        }
       );
 
-      console.log(response.data);
+      console.log("Signup successful:", response.data);
 
       alert("Signup Successful!");
 
@@ -37,10 +49,16 @@ function Signup() {
 
     } catch (error) {
 
-      console.log(error);
+      console.error("Full error object:", error);
+      console.error("Error response:", error.response);
+      console.error("Error message:", error.message);
+      
+      const errorMessage = error.response?.data?.message || error.message || "Network error or server is down";
+      setError(errorMessage);
+      alert(`Signup Failed: ${errorMessage}`);
 
-      alert("Signup Failed");
-
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,6 +72,12 @@ function Signup() {
         Create Account 🚀
       </h1>
 
+      {error && (
+        <div className="bg-red-900 text-red-200 p-3 rounded-lg mb-5 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+
       <div className="mb-5">
 
         <label className="text-gray-300 block mb-2">
@@ -66,6 +90,8 @@ function Signup() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+          disabled={loading}
+          required
         />
 
       </div>
@@ -82,6 +108,8 @@ function Signup() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+          disabled={loading}
+          required
         />
 
       </div>
@@ -98,15 +126,18 @@ function Signup() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+          disabled={loading}
+          required
         />
 
       </div>
 
       <button
         onClick={handleSignup}
-        className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg transition duration-300"
+        disabled={loading}
+        className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Signup
+        {loading ? "Creating Account..." : "Signup"}
       </button>
      <p className="text-gray-400 text-center mt-5">
 
