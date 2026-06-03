@@ -12,19 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = {
-    "http://localhost:3000",
-    "https://dev-vault-theta.vercel.app",
-    "https://dev-vault-git-main-harsha-mes-projects.vercel.app",
-    "https://dev-vault-vemrgn1pf-harsha-mes-projects.vercel.app",
-    "https://devvault1-aeaj.onrender.com"
-}, allowedHeaders = "*", methods = {
-    RequestMethod.GET,
-    RequestMethod.POST,
-    RequestMethod.PUT,
-    RequestMethod.DELETE,
-    RequestMethod.OPTIONS
-})
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
