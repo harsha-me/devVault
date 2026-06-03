@@ -19,11 +19,11 @@ import java.util.List;
     "https://dev-vault-vemrgn1pf-harsha-mes-projects.vercel.app",
     "https://devvault1-aeaj.onrender.com"
 }, allowedHeaders = "*", methods = {
-    org.springframework.http.HttpMethod.GET,
-    org.springframework.http.HttpMethod.POST,
-    org.springframework.http.HttpMethod.PUT,
-    org.springframework.http.HttpMethod.DELETE,
-    org.springframework.http.HttpMethod.OPTIONS
+    RequestMethod.GET,
+    RequestMethod.POST,
+    RequestMethod.PUT,
+    RequestMethod.DELETE,
+    RequestMethod.OPTIONS
 })
 public class UserController {
 
