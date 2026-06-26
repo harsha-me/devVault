@@ -45,7 +45,7 @@ public class SecurityConfig {
             config.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
         }
 
-        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization", "Accept", "X-Requested-With"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowCredentials(true);
 
