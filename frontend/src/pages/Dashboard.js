@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import {Link, Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE = process.env.REACT_APP_API_BASE || "https://devvault1-aeaj.onrender.com";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
 function Dashboard() {
 

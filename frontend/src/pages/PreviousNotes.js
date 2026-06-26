@@ -8,7 +8,7 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
-const API_BASE = process.env.REACT_APP_API_BASE || "https://devvault1-aeaj.onrender.com";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
 function PreviousNotes() {
   const [notes, setNotes] = useState([]);
