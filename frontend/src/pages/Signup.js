@@ -1,11 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
 function Signup() {
-
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,148 +13,104 @@ function Signup() {
   const [error, setError] = useState("");
 
   const handleSignup = async (e) => {
-
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const userData = {
-      name,
-      email,
-      password
-    };
+    const userData = { name, email, password };
 
     try {
-      console.log("Making signup request to:", `${API_BASE}/signup`);
-      console.log("Request data:", userData);
+      await axios.post(`${API_BASE}/signup`, userData, {
+        headers: { "Content-Type": "application/json" },
+        timeout: 90000,
+      });
 
-      const response = await axios.post(
-        `${API_BASE}/signup`,
-        userData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          timeout: 90000
-        }
-      );
-
-      console.log("Signup successful:", response.data);
-
-      alert("Signup Successful!");
-
-      setName("");
-      setEmail("");
-      setPassword("");
+      // BUG 13 FIX: Redirect to /login after successful signup instead of showing alert
+      navigate("/login");
 
     } catch (error) {
-
-      console.error("Full error object:", error);
-      console.error("Error response:", error.response);
-      console.error("Error message:", error.message);
-      
-      const errorMessage = error.response?.data?.message || error.message || "Network error or server is down";
+      console.error("Signup error:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Network error or server is down";
       setError(errorMessage);
-      alert(`Signup Failed: ${errorMessage}`);
-
     } finally {
       setLoading(false);
     }
   };
 
   return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="bg-gray-900 p-10 rounded-2xl shadow-2xl w-96">
 
-  <div className="min-h-screen bg-black flex items-center justify-center">
+        <h1 className="text-white text-4xl font-bold mb-8 text-center">
+          Create Account 🚀
+        </h1>
 
-    <div className="bg-gray-900 p-10 rounded-2xl shadow-2xl w-96">
+        {error && (
+          <div className="bg-red-900 text-red-200 p-3 rounded-lg mb-5 text-sm">
+            ⚠️ {error}
+          </div>
+        )}
 
-      <h1 className="text-white text-4xl font-bold mb-8 text-center">
-        Create Account 🚀
-      </h1>
-
-      {error && (
-        <div className="bg-red-900 text-red-200 p-3 rounded-lg mb-5 text-sm">
-          ⚠️ {error}
+        <div className="mb-5">
+          <label className="text-gray-300 block mb-2">Name</label>
+          <input
+            type="text"
+            placeholder="Enter name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+            disabled={loading}
+            required
+          />
         </div>
-      )}
 
-      <div className="mb-5">
+        <div className="mb-5">
+          <label className="text-gray-300 block mb-2">Email</label>
+          <input
+            type="email"
+            placeholder="Enter email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+            disabled={loading}
+            required
+          />
+        </div>
 
-        <label className="text-gray-300 block mb-2">
-          Name
-        </label>
+        <div className="mb-6">
+          <label className="text-gray-300 block mb-2">Password</label>
+          <input
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+            disabled={loading}
+            required
+          />
+        </div>
 
-        <input
-          type="text"
-          placeholder="Enter name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
+        <button
+          onClick={handleSignup}
           disabled={loading}
-          required
-        />
+          className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? "Creating Account..." : "Signup"}
+        </button>
+
+        <p className="text-gray-400 text-center mt-5">
+          Already have an account?{" "}
+          <Link to="/login" className="text-green-500 hover:underline">
+            Login
+          </Link>
+        </p>
 
       </div>
-
-      <div className="mb-5">
-
-        <label className="text-gray-300 block mb-2">
-          Email
-        </label>
-
-        <input
-          type="email"
-          placeholder="Enter email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
-          disabled={loading}
-          required
-        />
-
-      </div>
-
-      <div className="mb-6">
-
-        <label className="text-gray-300 block mb-2">
-          Password
-        </label>
-
-        <input
-          type="password"
-          placeholder="Enter password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-3 rounded-lg bg-gray-800 text-white outline-none"
-          disabled={loading}
-          required
-        />
-
-      </div>
-
-      <button
-        onClick={handleSignup}
-        disabled={loading}
-        className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? "Creating Account..." : "Signup"}
-      </button>
-     <p className="text-gray-400 text-center mt-5">
-
-  Already have an account?{" "}
-
-  <Link
-    to="/login"
-    className="text-green-500 hover:underline"
-  >
-    Login
-  </Link>
-
-</p>
     </div>
-
-  </div>
-);
+  );
 }
 
 export default Signup;
