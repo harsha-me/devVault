@@ -387,6 +387,7 @@ function Dashboard() {
 
 function NoteCard({ note }) {
   const [hovered, setHovered] = useState(false);
+  // eslint-disable-next-line no-useless-escape
   const preview = note.content.replace(/```[\s\S]*?```/g, "[code]").replace(/[#*`>_~\[\]]/g, "").trim();
 
   return (
