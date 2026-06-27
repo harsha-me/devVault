@@ -1,6 +1,8 @@
 package com.devvault.backend.config;
 
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -37,20 +39,37 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        
+
+        // Always allowed origins (hardcoded for reliability)
+        List<String> origins = new ArrayList<>(Arrays.asList(
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://dev-vault-theta.vercel.app",
+            "https://*.vercel.app"
+        ));
+
+        // Merge any extra origins from environment variable (comma-separated)
         String envOrigins = System.getenv("CORS_ALLOWED_ORIGINS");
         if (envOrigins != null && !envOrigins.trim().isEmpty()) {
-            config.setAllowedOrigins(Arrays.asList(envOrigins.split(",")));
-        } else {
-            config.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+            for (String o : envOrigins.split(",")) {
+                String trimmed = o.trim();
+                if (!trimmed.isEmpty() && !origins.contains(trimmed)) {
+                    origins.add(trimmed);
+                }
+            }
         }
 
-        config.setAllowedHeaders(Arrays.asList("Content-Type", "Authorization", "Accept", "X-Requested-With"));
+        config.setAllowedOriginPatterns(origins);
+        config.setAllowedHeaders(Arrays.asList(
+            "Content-Type", "Authorization", "Accept",
+            "X-Requested-With", "Origin",
+            "Access-Control-Request-Method", "Access-Control-Request-Headers"
+        ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
