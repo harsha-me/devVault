@@ -14,10 +14,13 @@ const DEFAULT_JAVA_CODE = `public class Main {
 
 function Compiler() {
   const token = localStorage.getItem("token");
+  const email = localStorage.getItem("email");
 
   const [code, setCode] = useState(DEFAULT_JAVA_CODE);
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   if (!token) return <Navigate to="/login" />;
 
@@ -42,6 +45,52 @@ function Compiler() {
     }
   };
 
+  const handleSave = async () => {
+    const title = window.prompt("Enter a title for your Java snippet:");
+    if (!title || !title.trim()) return;
+
+    setIsSaving(true);
+    try {
+      const markdownContent = `\`\`\`java\n${code}\n\`\`\``;
+      await axios.post(`${API_BASE}/addNote`, {
+        email: email,
+        title: title.trim(),
+        content: markdownContent
+      });
+      alert("Code saved successfully to your Vault!");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save code.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const receiverEmail = window.prompt("Enter your friend's email address:");
+    if (!receiverEmail || !receiverEmail.trim()) return;
+    
+    const title = window.prompt("Enter a title for this snippet:");
+    if (!title || !title.trim()) return;
+
+    setIsSharing(true);
+    try {
+      const markdownContent = `\`\`\`java\n${code}\n\`\`\``;
+      await axios.post(`${API_BASE}/shareNote`, {
+        senderEmail: email,
+        receiverEmail: receiverEmail.trim(),
+        title: title.trim(),
+        content: markdownContent
+      });
+      alert("Code sent successfully to " + receiverEmail.trim() + "!");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to share code.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#11111b", color: "#cdd6f4", fontFamily: "'Inter', -apple-system, sans-serif" }}>
       {/* ── Navbar ── */}
@@ -61,6 +110,34 @@ function Compiler() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <button
+            onClick={handleShare}
+            disabled={isSharing}
+            style={{
+              background: "transparent",
+              color: "#89b4fa",
+              border: "1px solid #89b4fa", padding: "7px 16px", borderRadius: 9,
+              fontWeight: 700, fontSize: "0.85rem", cursor: isSharing ? "not-allowed" : "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {isSharing ? "Sharing..." : "↗ Share"}
+          </button>
+          
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            style={{
+              background: "transparent",
+              color: "#cba6f7",
+              border: "1px solid #cba6f7", padding: "7px 16px", borderRadius: 9,
+              fontWeight: 700, fontSize: "0.85rem", cursor: isSaving ? "not-allowed" : "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {isSaving ? "Saving..." : "💾 Save"}
+          </button>
+
           <button
             onClick={handleRun}
             disabled={isRunning}
