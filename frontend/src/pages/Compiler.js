@@ -14,7 +14,6 @@ const DEFAULT_JAVA_CODE = `public class Main {
 
 function Compiler() {
   const token = localStorage.getItem("token");
-  const email = localStorage.getItem("email");
   const navigate = useNavigate();
 
   const [code, setCode] = useState(DEFAULT_JAVA_CODE);
@@ -22,12 +21,6 @@ function Compiler() {
   const [isRunning, setIsRunning] = useState(false);
 
   if (!token) return <Navigate to="/login" />;
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    navigate("/login");
-  };
 
   const handleRun = async () => {
     setIsRunning(true);
