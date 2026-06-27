@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import PreviousNotes from "./pages/PreviousNotes";
 import ReceivedNotes from "./pages/ReceivedNotes";
+import Compiler from "./pages/Compiler";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/previous-notes" element={<PreviousNotes />} />
         <Route path="/received-notes" element={<ReceivedNotes />} />
+        <Route path="/compiler" element={<Compiler />} />
       </Routes>
     </BrowserRouter>
   );

@@ -205,6 +205,10 @@ function Dashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
           <span style={{ fontSize: "0.8rem", color: "#585b70", background: "#1e1e2e", padding: "5px 12px", borderRadius: 20, border: "1px solid #313244" }}>{email}</span>
 
+          <Link to="/compiler" style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", padding: "7px 14px", borderRadius: 9, textDecoration: "none", fontSize: "0.83rem", fontWeight: 600 }}>
+            Compiler
+          </Link>
+
           <Link to="/previous-notes" style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)", color: "#fff", padding: "7px 14px", borderRadius: 9, textDecoration: "none", fontSize: "0.83rem", fontWeight: 600 }}>
             My Notes
           </Link>
