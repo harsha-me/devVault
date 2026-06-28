@@ -9,4 +9,6 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     List<Note> findByEmail(String email);
 
+    List<Note> findByEmailOrderByPinnedDescIdDesc(String email);
+
 }

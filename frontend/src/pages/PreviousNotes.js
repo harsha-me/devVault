@@ -6,7 +6,8 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import { Search, X, Zap } from "lucide-react";
+import { Search, X, Zap, Pin, PinOff, Download, FileDown } from "lucide-react";
+import jsPDF from "jspdf";
 import Sidebar from "../components/Sidebar";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
@@ -15,6 +16,12 @@ const extractCode = (content) => {
   if (!content) return null;
   const match = content.match(/```(?:[a-zA-Z0-9+#-]+)?\n([\s\S]*?)\n?```/);
   return match ? match[1] : null;
+};
+
+const readingTime = (content) => {
+  const words = (content || "").trim().split(/\s+/).filter(Boolean).length;
+  const mins = Math.ceil(words / 200);
+  return mins < 1 ? "< 1 min" : `${mins} min read`;
 };
 
 /* ── Markdown Renderer ──────────────────────────────────────── */
@@ -74,6 +81,69 @@ function ToolbarBtn({ onClick, title, children, mono }) {
   );
 }
 
+/* ── Export helpers ─────────────────────────────────────────── */
+const exportMarkdown = (note) => {
+  const blob = new Blob([`# ${note.title}\n\n${note.content}`], { type: 'text/markdown;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `${note.title.replace(/[^a-z0-9]/gi, '_')}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const exportPDF = (note) => {
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const margin = 20;
+  const pageW  = doc.internal.pageSize.getWidth();
+  const maxW   = pageW - margin * 2;
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(42, 37, 32);
+  const titleLines = doc.splitTextToSize(note.title, maxW);
+  doc.text(titleLines, margin, 30);
+
+  // Divider
+  const titleH = titleLines.length * 8;
+  doc.setDrawColor(200, 195, 190);
+  doc.line(margin, 30 + titleH, pageW - margin, 30 + titleH);
+
+  // Content — strip markdown syntax for clean PDF
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(74, 69, 64);
+  const plain = note.content
+    .replace(/```[\s\S]*?```/g, '[code block]')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
+    .replace(/~~(.*?)~~/g, '$1')
+    .replace(/`(.*?)`/g, '$1')
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+    .replace(/^[-*]\s/gm, '• ')
+    .replace(/^>\s/gm, '  ')
+    .trim();
+
+  const contentLines = doc.splitTextToSize(plain, maxW);
+  let y = 30 + titleH + 8;
+  const pageH = doc.internal.pageSize.getHeight();
+
+  contentLines.forEach(line => {
+    if (y > pageH - margin) { doc.addPage(); y = margin; }
+    doc.text(line, margin, y);
+    y += 6;
+  });
+
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(155, 146, 135);
+  doc.text(`Exported from DevVault · ${new Date().toLocaleDateString()}`, margin, pageH - 10);
+
+  doc.save(`${note.title.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+};
+
 /* ── Edit Panel ─────────────────────────────────────────────── */
 function EditPanel({ note, onSave, onCancel }) {
   const [editTitle,   setEditTitle]   = useState(note.title);
@@ -98,27 +168,17 @@ function EditPanel({ note, onSave, onCancel }) {
 
   return (
     <div className="dv-card" style={{ overflow: 'hidden', marginBottom: '0.5rem', gridColumn: '1 / -1' }}>
-      {/* Edit header */}
       <div style={{ padding: '0.75rem 1.25rem', background: 'var(--stone-50)', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em' }}>✏️ EDITING</span>
         <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 9, padding: 3, gap: 2 }}>
           {[{key:'write',icon:'✏️'},{key:'split',icon:'⬛'},{key:'preview',icon:'👁️'}].map(({key,icon})=>(
-            <button key={key} onClick={() => setMode(key)} style={{
-              padding: '4px 11px', borderRadius: 7, border: 'none', cursor: 'pointer',
-              fontSize: '0.72rem', fontWeight: 700,
-              background: mode===key ? 'var(--cream)' : 'transparent',
-              color: mode===key ? 'var(--stone-900)' : 'var(--stone-400)',
-              boxShadow: mode===key ? '0 1px 4px rgba(74,69,64,0.1)' : 'none',
-              fontFamily: 'inherit',
-            }}>{icon}</button>
+            <button key={key} onClick={() => setMode(key)} style={{ padding: '4px 11px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, background: mode===key ? 'var(--cream)' : 'transparent', color: mode===key ? 'var(--stone-900)' : 'var(--stone-400)', boxShadow: mode===key ? '0 1px 4px rgba(74,69,64,0.1)' : 'none', fontFamily: 'inherit' }}>{icon}</button>
           ))}
         </div>
       </div>
-      {/* Title */}
       <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--stone-200)' }}>
         <input type="text" value={editTitle} onChange={e=>setEditTitle(e.target.value)} style={{ width:'100%',background:'transparent',border:'none',outline:'none',fontSize:'1.125rem',fontWeight:700,color:'var(--stone-900)',fontFamily:'inherit',boxSizing:'border-box' }} />
       </div>
-      {/* Toolbar */}
       {mode !== 'preview' && (
         <div style={{ padding:'0.5rem 1.25rem',borderBottom:'1px solid var(--stone-200)',display:'flex',gap:'0.25rem',flexWrap:'wrap',alignItems:'center',background:'var(--stone-50)' }}>
           {toolbarGroups.map((grp,gi)=>(
@@ -129,7 +189,6 @@ function EditPanel({ note, onSave, onCancel }) {
           ))}
         </div>
       )}
-      {/* Panes */}
       <div style={{ display: 'flex', minHeight: 260 }}>
         {(mode==='write'||mode==='split') && (
           <div style={{flex:1,borderRight:mode==='split'?'1px solid var(--stone-200)':'none',display:'flex',flexDirection:'column'}}>
@@ -146,7 +205,6 @@ function EditPanel({ note, onSave, onCancel }) {
           </div>
         )}
       </div>
-      {/* Actions */}
       <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end', background: 'var(--stone-50)' }}>
         <button onClick={onCancel} className="dv-btn dv-btn-ghost" style={{ padding: '8px 18px', borderRadius: 10 }}>Cancel</button>
         <button onClick={() => onSave(editTitle, editContent)} className="dv-btn dv-btn-primary" style={{ padding: '8px 20px', borderRadius: 10 }}>💾 Save Changes</button>
@@ -156,38 +214,106 @@ function EditPanel({ note, onSave, onCancel }) {
 }
 
 /* ── Note Card ──────────────────────────────────────────────── */
-function NoteViewCard({ note, onEdit, onDelete, onShare, onRun }) {
-  const [hovered, setHovered] = useState(false);
+function NoteViewCard({ note, onEdit, onDelete, onShare, onRun, onTogglePin }) {
+  const [hovered,       setHovered]       = useState(false);
+  const [exportMenuOpen,setExportMenuOpen]= useState(false);
   const hasCode = !!extractCode(note.content);
   // eslint-disable-next-line no-useless-escape
   const preview = note.content.replace(/```[\s\S]*?```/g,"[code snippet]").replace(/[#*`>_~\[\]]/g,"").trim();
+  const readTime = readingTime(note.content);
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setExportMenuOpen(false); }}
       className="dv-card dv-card-hover"
       style={{
         overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        background: hovered ? 'var(--stone-50)' : 'var(--cream)',
-        borderColor: hovered ? 'var(--stone-300)' : 'var(--stone-200)',
+        background: note.pinned ? 'var(--lavender)' : hovered ? 'var(--stone-50)' : 'var(--cream)',
+        borderColor: note.pinned ? 'var(--accent-light)' : hovered ? 'var(--stone-300)' : 'var(--stone-200)',
+        position: 'relative',
       }}
     >
+      {/* Pinned indicator */}
+      {note.pinned && (
+        <div style={{ position: 'absolute', top: 10, right: 10 }}>
+          <Pin size={13} style={{ color: 'var(--accent)', fill: 'var(--accent)' }} />
+        </div>
+      )}
+
       <div style={{ padding: '1.125rem 1.25rem', flex: 1 }}>
-        <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.625rem', color: 'var(--stone-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{note.title}</h2>
+        <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--stone-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: note.pinned ? '1.5rem' : 0 }}>
+          {note.title}
+        </h2>
+        <span style={{ fontSize: '0.7rem', color: 'var(--stone-400)', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>
+          📖 {readTime}
+        </span>
         <p style={{ fontSize: '0.8125rem', color: 'var(--stone-400)', lineHeight: 1.6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
           {preview || "No content preview available."}
         </p>
       </div>
-      <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+
+      <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Run */}
         {hasCode && (
-          <button onClick={onRun} className="dv-btn dv-btn-sage" style={{ padding: '6px 10px', borderRadius: 9, fontSize: '0.75rem', gap: 4 }}>
-            <Zap size={11} fill="currentColor" /> Run
+          <button onClick={onRun} className="dv-btn dv-btn-sage" style={{ padding: '5px 9px', borderRadius: 8, fontSize: '0.72rem', gap: 3 }}>
+            <Zap size={10} fill="currentColor" /> Run
           </button>
         )}
-        <button onClick={onEdit}   className="dv-btn dv-btn-ghost" style={{ flex: 1, padding: '7px', borderRadius: 9, fontSize: '0.8rem' }}>✏️ Edit</button>
-        <button onClick={onShare}  className="dv-btn" style={{ flex: 1, padding: '7px', borderRadius: 9, fontSize: '0.8rem', background: 'var(--pale-blue)', color: '#2E6BAA', border: '1px solid #C4DCF8' }}>📤 Share</button>
-        <button onClick={onDelete} className="dv-btn dv-btn-danger" style={{ padding: '7px 10px', borderRadius: 9, fontSize: '0.8rem' }}>🗑️</button>
+
+        {/* Pin toggle */}
+        <button
+          onClick={onTogglePin}
+          title={note.pinned ? 'Unpin' : 'Pin to top'}
+          style={{
+            background: note.pinned ? 'var(--accent-light)' : 'var(--stone-100)',
+            border: `1px solid ${note.pinned ? 'var(--accent)' : 'var(--stone-200)'}`,
+            borderRadius: 8, padding: '5px 9px', cursor: 'pointer',
+            color: note.pinned ? 'var(--accent)' : 'var(--stone-400)',
+            display: 'flex', alignItems: 'center', gap: 3,
+            fontSize: '0.72rem', fontWeight: 700, fontFamily: 'inherit', transition: 'all 0.18s',
+          }}
+        >
+          {note.pinned ? <PinOff size={11} /> : <Pin size={11} />}
+        </button>
+
+        <button onClick={onEdit}   className="dv-btn dv-btn-ghost" style={{ flex: 1, padding: '6px', borderRadius: 8, fontSize: '0.78rem' }}>✏️ Edit</button>
+        <button onClick={onShare}  className="dv-btn" style={{ flex: 1, padding: '6px', borderRadius: 8, fontSize: '0.78rem', background: 'var(--pale-blue)', color: '#2E6BAA', border: '1px solid #C4DCF8' }}>📤 Share</button>
+
+        {/* Export dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setExportMenuOpen(v => !v)}
+            title="Export note"
+            style={{ background: 'var(--stone-100)', border: '1px solid var(--stone-200)', borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: 'var(--stone-500)', display: 'flex', alignItems: 'center', transition: 'all 0.18s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--stone-200)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--stone-100)'}
+          >
+            <FileDown size={14} />
+          </button>
+          {exportMenuOpen && (
+            <div style={{ position: 'absolute', bottom: '110%', right: 0, background: 'var(--ivory)', border: '1px solid var(--stone-200)', borderRadius: 12, boxShadow: '0 8px 24px rgba(74,69,64,0.14)', padding: '0.4rem', minWidth: 140, zIndex: 50 }}>
+              <button
+                onClick={() => { exportMarkdown(note); setExportMenuOpen(false); }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--stone-100)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <Download size={13} /> Download .md
+              </button>
+              <button
+                onClick={() => { exportPDF(note); setExportMenuOpen(false); }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--stone-100)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <Download size={13} /> Export PDF
+              </button>
+            </div>
+          )}
+        </div>
+
+        <button onClick={onDelete} className="dv-btn dv-btn-danger" style={{ padding: '5px 9px', borderRadius: 8, fontSize: '0.78rem' }}>🗑️</button>
       </div>
     </div>
   );
@@ -205,6 +331,7 @@ function PreviousNotes() {
   const [showShareBox, setShowShareBox] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
   const [search,       setSearch]       = useState("");
+  const searchRef = useRef(null);
 
   const fetchNotes = useCallback(async () => {
     try { const r = await axios.get(`${API_BASE}/getNotes/${email}`); setNotes(r.data); }
@@ -215,6 +342,30 @@ function PreviousNotes() {
     try { const r = await axios.get(`${API_BASE}/users`); setUsers(r.data); }
     catch (e) { console.log(e); }
   }, []);
+
+  useEffect(() => { fetchNotes(); fetchUsers(); }, [fetchNotes, fetchUsers]);
+
+  /* ── Keyboard shortcuts ── */
+  useEffect(() => {
+    const handleKey = (e) => {
+      // Ctrl+K → focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+      // Escape → close modal / clear search
+      if (e.key === 'Escape') {
+        if (showShareBox) setShowShareBox(false);
+        else if (editingId) setEditingId(null);
+        else if (search)   setSearch('');
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [showShareBox, editingId, search]);
+
+  if (!token) return <Navigate to="/login" />;
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this note?")) return;
@@ -237,14 +388,38 @@ function PreviousNotes() {
     } catch (e) { console.log(e); alert("Failed to share note"); }
   };
 
-  useEffect(() => { fetchNotes(); fetchUsers(); }, [fetchNotes, fetchUsers]);
-
-  if (!token) return <Navigate to="/login" />;
+  const handleTogglePin = async (id) => {
+    try { await axios.put(`${API_BASE}/togglePin/${id}`); fetchNotes(); }
+    catch (e) { console.log(e); }
+  };
 
   const filtered = notes.filter(n =>
     n.title.toLowerCase().includes(search.toLowerCase()) ||
     n.content.toLowerCase().includes(search.toLowerCase())
   );
+
+  const pinnedFiltered   = filtered.filter(n => n.pinned);
+  const unpinnedFiltered = filtered.filter(n => !n.pinned);
+
+  const renderCard = (note) =>
+    editingId === note.id ? (
+      <EditPanel
+        key={note.id}
+        note={note}
+        onSave={(t, c) => handleUpdate(note.id, t, c)}
+        onCancel={() => setEditingId(null)}
+      />
+    ) : (
+      <NoteViewCard
+        key={note.id}
+        note={note}
+        onEdit={() => setEditingId(note.id)}
+        onDelete={() => handleDelete(note.id)}
+        onShare={() => { setSelectedNote(note); setShowShareBox(true); }}
+        onRun={() => { const code = extractCode(note.content); if (code) navigate('/compiler', { state: { code } }); }}
+        onTogglePin={() => handleTogglePin(note.id)}
+      />
+    );
 
   return (
     <div className="dv-page">
@@ -257,14 +432,15 @@ function PreviousNotes() {
             <div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--stone-900)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>My Notes</h1>
               <p style={{ color: 'var(--stone-400)', fontSize: '0.875rem' }}>
-                {notes.length} note{notes.length !== 1 ? 's' : ''} in your vault
+                {notes.length} note{notes.length !== 1 ? 's' : ''} · {notes.filter(n => n.pinned).length} pinned
               </p>
             </div>
             {/* Search */}
-            <div style={{ position: 'relative', width: 260 }}>
+            <div style={{ position: 'relative', width: 280 }}>
               <Search size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--stone-400)', pointerEvents: 'none' }} />
               <input
-                type="text" placeholder="Search notes…"
+                ref={searchRef}
+                type="text" placeholder="Search notes… (Ctrl+K)"
                 value={search} onChange={e => setSearch(e.target.value)}
                 className="dv-input"
                 style={{ paddingLeft: 38, paddingTop: 10, paddingBottom: 10, fontSize: '0.875rem' }}
@@ -277,7 +453,7 @@ function PreviousNotes() {
             </div>
           </div>
 
-          {/* Notes grid */}
+          {/* Notes */}
           {filtered.length === 0 ? (
             <div className="dv-card" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{search ? '🔍' : '📝'}</div>
@@ -287,30 +463,34 @@ function PreviousNotes() {
               {!search && <p style={{ color: 'var(--stone-300)', fontSize: '0.825rem', marginTop: '0.5rem' }}>Your vault is ready and waiting 🌿</p>}
             </div>
           ) : (
-            <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '1.125rem' }}>
-              {filtered.map(note =>
-                editingId === note.id ? (
-                  <EditPanel
-                    key={note.id}
-                    note={note}
-                    onSave={(t, c) => handleUpdate(note.id, t, c)}
-                    onCancel={() => setEditingId(null)}
-                  />
-                ) : (
-                  <NoteViewCard
-                    key={note.id}
-                    note={note}
-                    onEdit={() => setEditingId(note.id)}
-                    onDelete={() => handleDelete(note.id)}
-                    onShare={() => { setSelectedNote(note); setShowShareBox(true); }}
-                    onRun={() => {
-                      const code = extractCode(note.content);
-                      if (code) navigate('/compiler', { state: { code } });
-                    }}
-                  />
-                )
+            <>
+              {/* Pinned section */}
+              {pinnedFiltered.length > 0 && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <Pin size={14} style={{ color: 'var(--accent)', fill: 'var(--accent)' }} />
+                    <span className="dv-section-heading">Pinned</span>
+                  </div>
+                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '1.125rem' }}>
+                    {pinnedFiltered.map(renderCard)}
+                  </div>
+                </div>
               )}
-            </div>
+
+              {/* Regular notes */}
+              {unpinnedFiltered.length > 0 && (
+                <>
+                  {pinnedFiltered.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <span className="dv-section-heading">Other Notes</span>
+                    </div>
+                  )}
+                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '1.125rem' }}>
+                    {unpinnedFiltered.map(renderCard)}
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
       </main>

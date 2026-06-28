@@ -6,7 +6,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import { ChevronRight, Zap } from "lucide-react";
+import { ChevronRight, Zap, Pin, PinOff } from "lucide-react";
 import * as calendarService from "../services/calendarService";
 import Sidebar from "../components/Sidebar";
 
@@ -16,6 +16,12 @@ const extractCode = (content) => {
   if (!content) return null;
   const match = content.match(/```(?:[a-zA-Z0-9+#-]+)?\n([\s\S]*?)\n?```/);
   return match ? match[1] : null;
+};
+
+const readingTime = (content) => {
+  const words = (content || "").trim().split(/\s+/).filter(Boolean).length;
+  const mins = Math.ceil(words / 200);
+  return mins < 1 ? "< 1 min read" : `${mins} min read`;
 };
 
 /* ── Warm Markdown Renderer ─────────────────────────────────── */
@@ -83,12 +89,14 @@ function ToolbarBtn({ onClick, title, children, mono }) {
 }
 
 /* ── Note Card ──────────────────────────────────────────────── */
-function NoteCard({ note }) {
+function NoteCard({ note, onTogglePin }) {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
+  const [pinHovered, setPinHovered] = useState(false);
   // eslint-disable-next-line no-useless-escape
   const preview = note.content.replace(/```[\s\S]*?```/g, "[code]").replace(/[#*`>_~\[\]]/g, "").trim();
   const extractedCode = extractCode(note.content);
+  const readTime = readingTime(note.content);
 
   return (
     <div
@@ -97,18 +105,31 @@ function NoteCard({ note }) {
       className="dv-card dv-card-hover"
       style={{
         padding: '1.25rem', display: 'flex', flexDirection: 'column',
-        background: hovered ? 'var(--stone-50)' : 'var(--cream)',
-        borderColor: hovered ? 'var(--stone-300)' : 'var(--stone-200)',
-        cursor: 'default',
+        background: note.pinned ? 'var(--lavender)' : hovered ? 'var(--stone-50)' : 'var(--cream)',
+        borderColor: note.pinned ? 'var(--accent-light)' : hovered ? 'var(--stone-300)' : 'var(--stone-200)',
+        cursor: 'default', position: 'relative',
       }}
     >
+      {/* Pin badge */}
+      {note.pinned && (
+        <div style={{ position: 'absolute', top: 10, right: 10 }}>
+          <Pin size={13} style={{ color: 'var(--accent)', fill: 'var(--accent)' }} />
+        </div>
+      )}
+
       <h3 style={{
-        fontSize: '0.9375rem', fontWeight: 700,
-        color: 'var(--stone-900)', marginBottom: '0.5rem',
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        fontSize: '0.9375rem', fontWeight: 700, color: 'var(--stone-900)',
+        marginBottom: '0.375rem', overflow: 'hidden', textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap', paddingRight: note.pinned ? '1.25rem' : 0,
       }}>
         {note.title}
       </h3>
+
+      {/* Reading time */}
+      <span style={{ fontSize: '0.7rem', color: 'var(--stone-400)', fontWeight: 600, marginBottom: '0.5rem' }}>
+        📖 {readTime}
+      </span>
+
       <p style={{
         fontSize: '0.8125rem', color: 'var(--stone-400)', lineHeight: 1.6,
         overflow: 'hidden', display: '-webkit-box',
@@ -117,7 +138,27 @@ function NoteCard({ note }) {
       }}>
         {preview || "No content preview available."}
       </p>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+        {/* Pin toggle */}
+        <button
+          onClick={() => onTogglePin(note.id)}
+          onMouseEnter={() => setPinHovered(true)}
+          onMouseLeave={() => setPinHovered(false)}
+          title={note.pinned ? 'Unpin note' : 'Pin to top'}
+          style={{
+            background: pinHovered ? (note.pinned ? 'var(--danger-light)' : 'var(--accent-light)') : 'var(--stone-100)',
+            border: '1px solid var(--stone-200)',
+            borderRadius: 8, padding: '4px 8px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 4,
+            color: pinHovered ? (note.pinned ? 'var(--danger)' : 'var(--accent)') : 'var(--stone-400)',
+            transition: 'all 0.18s', fontSize: '0.7rem', fontWeight: 700, fontFamily: 'inherit',
+          }}
+        >
+          {note.pinned ? <PinOff size={11} /> : <Pin size={11} />}
+          {note.pinned ? 'Unpin' : 'Pin'}
+        </button>
+
         <button
           onClick={() => navigate('/previous-notes')}
           style={{
@@ -129,6 +170,7 @@ function NoteCard({ note }) {
         >
           Edit / Share <ChevronRight size={13} />
         </button>
+
         {extractedCode && (
           <button
             onClick={() => navigate('/compiler', { state: { code: extractedCode } })}
@@ -152,9 +194,10 @@ function NoteCard({ note }) {
 
 /* ── Dashboard ──────────────────────────────────────────────── */
 function Dashboard() {
-  const token    = localStorage.getItem("token");
-  const email    = localStorage.getItem("email");
+  const token       = localStorage.getItem("token");
+  const email       = localStorage.getItem("email");
   const textareaRef = useRef(null);
+  const titleInputRef = useRef(null);
 
   const [title,              setTitle]              = useState("");
   const [content,            setContent]            = useState("");
@@ -185,6 +228,26 @@ function Dashboard() {
     return () => clearInterval(iv);
   }, [token, email, fetchNotes, fetchUnreadCount, fetchReminders]);
 
+  /* ── Keyboard shortcuts ── */
+  useEffect(() => {
+    const handleKey = (e) => {
+      // Ctrl+S → save note
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (title.trim() && content.trim()) handleAddNote();
+      }
+      // Ctrl+N → focus title input
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        titleInputRef.current?.focus();
+        titleInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, content]);
+
   if (!token) return <Navigate to="/login" />;
 
   const handleAddNote = async () => {
@@ -195,6 +258,13 @@ function Dashboard() {
       setTitle(""); setContent(""); fetchNotes();
     } catch (e) { console.log(e); alert("Failed to add note"); }
     finally { setSaving(false); }
+  };
+
+  const handleTogglePin = async (id) => {
+    try {
+      await axios.put(`${API_BASE}/togglePin/${id}`);
+      fetchNotes();
+    } catch (e) { console.log(e); }
   };
 
   const insertAtCursor = (before, after = "", placeholder = "") => {
@@ -244,11 +314,15 @@ function Dashboard() {
   const dateLabel = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   const statItems = [
-    { label: "Notes", value: notes.length,                         bg: 'var(--stone-100)', border: 'var(--stone-200)',  color: 'var(--stone-600)', icon: "📝" },
-    { label: "Today", value: dashboardReminders.today.length,      bg: 'var(--sage)',       border: '#C8E4CC',           color: '#3D7A52',          icon: "🌿" },
-    { label: "Upcoming",value: dashboardReminders.upcoming.length, bg: 'var(--pale-blue)', border: '#C4DCF8',           color: '#2E6BAA',          icon: "⏳" },
-    { label: "Overdue", value: dashboardReminders.overdue.length,  bg: 'var(--peach)',     border: '#FDDCC4',           color: '#A0522D',          icon: "⚠️" },
+    { label: "Notes",    value: notes.length,                         bg: 'var(--stone-100)', border: 'var(--stone-200)', color: 'var(--stone-600)', icon: "📝" },
+    { label: "Today",    value: dashboardReminders.today.length,      bg: 'var(--sage)',       border: '#C8E4CC',          color: '#3D7A52',          icon: "🌿" },
+    { label: "Upcoming", value: dashboardReminders.upcoming.length,   bg: 'var(--pale-blue)', border: '#C4DCF8',          color: '#2E6BAA',          icon: "⏳" },
+    { label: "Overdue",  value: dashboardReminders.overdue.length,    bg: 'var(--peach)',     border: '#FDDCC4',          color: '#A0522D',          icon: "⚠️" },
   ];
+
+  /* Split pinned vs unpinned */
+  const pinnedNotes   = notes.filter(n => n.pinned);
+  const unpinnedNotes = notes.filter(n => !n.pinned);
 
   return (
     <div className="dv-page">
@@ -267,12 +341,17 @@ function Dashboard() {
                 {dateLabel} · {notes.length} note{notes.length !== 1 ? 's' : ''} in your vault
               </p>
             </div>
-            <div style={{
-              fontSize: '0.75rem', color: 'var(--stone-500)', fontWeight: 500,
-              background: 'var(--stone-100)', padding: '6px 14px',
-              borderRadius: 20, border: '1px solid var(--stone-200)',
-            }}>
-              {email}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {/* Keyboard hint */}
+              <div style={{ fontSize: '0.7rem', color: 'var(--stone-400)', display: 'flex', gap: '0.5rem' }}>
+                <kbd style={{ background: 'var(--stone-100)', border: '1px solid var(--stone-200)', borderRadius: 5, padding: '2px 6px', fontFamily: 'monospace' }}>Ctrl+N</kbd>
+                <span>new note</span>
+                <kbd style={{ background: 'var(--stone-100)', border: '1px solid var(--stone-200)', borderRadius: 5, padding: '2px 6px', fontFamily: 'monospace' }}>Ctrl+S</kbd>
+                <span>save</span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--stone-500)', fontWeight: 500, background: 'var(--stone-100)', padding: '6px 14px', borderRadius: 20, border: '1px solid var(--stone-200)' }}>
+                {email}
+              </div>
             </div>
           </div>
 
@@ -292,17 +371,11 @@ function Dashboard() {
           {/* ── Note Editor ── */}
           <div className="dv-card" style={{ marginBottom: '2.25rem', overflow: 'hidden' }}>
 
-            {/* Card header */}
-            <div style={{
-              padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'var(--stone-50)',
-            }}>
+            <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--stone-50)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ fontSize: '0.9rem' }}>✏️</span>
                 <span style={{ fontWeight: 700, color: 'var(--stone-700)', fontSize: '0.875rem' }}>New Note</span>
               </div>
-              {/* Mode toggle */}
               <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 10, padding: 3, gap: 2, border: '1px solid var(--stone-200)' }}>
                 {[
                   { key: 'write',   label: 'Write',   icon: '✏️' },
@@ -326,23 +399,16 @@ function Dashboard() {
             {/* Title */}
             <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--stone-200)' }}>
               <input
-                type="text" placeholder="Note title…"
+                ref={titleInputRef}
+                type="text" placeholder="Note title… (Ctrl+N to focus)"
                 value={title} onChange={e => setTitle(e.target.value)}
-                style={{
-                  width: '100%', background: 'transparent', border: 'none',
-                  outline: 'none', fontSize: '1.25rem', fontWeight: 700,
-                  color: 'var(--stone-900)', fontFamily: 'inherit', boxSizing: 'border-box',
-                }}
+                style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontSize: '1.25rem', fontWeight: 700, color: 'var(--stone-900)', fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
 
             {/* Toolbar */}
             {mode !== 'preview' && (
-              <div style={{
-                padding: '0.5rem 1.5rem', borderBottom: '1px solid var(--stone-200)',
-                display: 'flex', gap: '0.25rem', flexWrap: 'wrap',
-                background: 'var(--stone-50)', alignItems: 'center',
-              }}>
+              <div style={{ padding: '0.5rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', gap: '0.25rem', flexWrap: 'wrap', background: 'var(--stone-50)', alignItems: 'center' }}>
                 {toolbarGroups.map((group, gi) => (
                   <React.Fragment key={gi}>
                     {gi > 0 && <div style={{ width: 1, height: 20, background: 'var(--stone-200)', margin: '0 0.2rem' }} />}
@@ -368,14 +434,7 @@ function Dashboard() {
                     value={content}
                     onChange={e => setContent(e.target.value)}
                     placeholder={"Write in Markdown…\n\n# My Heading\n**bold**, _italic_, `code`\n\n```javascript\nconst greet = () => 'Hello DevVault!';\n```"}
-                    style={{
-                      flex: 1, background: 'transparent', border: 'none',
-                      outline: 'none', resize: 'none',
-                      padding: '1.25rem 1.5rem', color: 'var(--stone-700)',
-                      fontSize: '0.875rem',
-                      fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace",
-                      lineHeight: '1.8', minHeight: 260,
-                    }}
+                    style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', padding: '1.25rem 1.5rem', color: 'var(--stone-700)', fontSize: '0.875rem', fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace", lineHeight: '1.8', minHeight: 260 }}
                   />
                 </div>
               )}
@@ -399,52 +458,59 @@ function Dashboard() {
             </div>
 
             {/* Footer */}
-            <div style={{
-              padding: '0.75rem 1.5rem', borderTop: '1px solid var(--stone-200)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'var(--stone-50)',
-            }}>
+            <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--stone-50)' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--stone-400)' }}>
                 {wordCount} word{wordCount !== 1 ? 's' : ''} · {content.length} chars
               </span>
-              <button
-                onClick={handleAddNote}
-                disabled={saving}
-                className="dv-btn dv-btn-primary"
-                style={{ padding: '9px 22px', borderRadius: 12 }}
-              >
-                {saving ? 'Saving…' : '💾 Save Note'}
+              <button onClick={handleAddNote} disabled={saving} className="dv-btn dv-btn-primary" style={{ padding: '9px 22px', borderRadius: 12 }}>
+                {saving ? 'Saving…' : '💾 Save Note'} <kbd style={{ fontSize: '0.65rem', opacity: 0.7, marginLeft: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 5px' }}>Ctrl+S</kbd>
               </button>
             </div>
           </div>
 
-          {/* ── Recent Notes ── */}
+          {/* ── Notes Sections ── */}
           {notes.length > 0 ? (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.125rem' }}>
-                <h2 className="dv-section-heading">Recent Notes</h2>
-                <button
-                  onClick={() => window.location.href = '/previous-notes'}
-                  style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontFamily: 'inherit' }}
-                >
-                  View all <ChevronRight size={14} />
-                </button>
-              </div>
-              <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1rem' }}>
-                {notes.slice(0, 6).map(note => (
-                  <NoteCard key={note.id} note={note} />
-                ))}
-              </div>
+              {/* Pinned Notes */}
+              {pinnedNotes.length > 0 && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.125rem' }}>
+                    <Pin size={15} style={{ color: 'var(--accent)', fill: 'var(--accent)' }} />
+                    <h2 className="dv-section-heading">Pinned</h2>
+                  </div>
+                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1rem' }}>
+                    {pinnedNotes.slice(0, 6).map(note => (
+                      <NoteCard key={note.id} note={note} onTogglePin={handleTogglePin} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Notes */}
+              {unpinnedNotes.length > 0 && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.125rem' }}>
+                    <h2 className="dv-section-heading">{pinnedNotes.length > 0 ? 'Other Notes' : 'Recent Notes'}</h2>
+                    <button
+                      onClick={() => window.location.href = '/previous-notes'}
+                      style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3, fontFamily: 'inherit' }}
+                    >
+                      View all <ChevronRight size={14} />
+                    </button>
+                  </div>
+                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1rem' }}>
+                    {unpinnedNotes.slice(0, 6).map(note => (
+                      <NoteCard key={note.id} note={note} onTogglePin={handleTogglePin} />
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           ) : (
             <div className="dv-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📝</div>
-              <p style={{ color: 'var(--stone-400)', fontSize: '0.9375rem' }}>
-                Write your first note above to get started.
-              </p>
-              <p style={{ color: 'var(--stone-300)', fontSize: '0.825rem', marginTop: '0.5rem' }}>
-                Your vault is ready and waiting 🌿
-              </p>
+              <p style={{ color: 'var(--stone-400)', fontSize: '0.9375rem' }}>Write your first note above to get started.</p>
+              <p style={{ color: 'var(--stone-300)', fontSize: '0.825rem', marginTop: '0.5rem' }}>Your vault is ready and waiting 🌿</p>
             </div>
           )}
         </div>

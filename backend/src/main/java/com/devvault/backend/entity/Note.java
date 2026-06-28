@@ -18,6 +18,8 @@ public class Note {
 
     private String content;
 
+    private boolean pinned = false;
+
     public Note() {
     }
 
@@ -51,5 +53,13 @@ public class Note {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public boolean isPinned() {
+        return pinned;
+    }
+
+    public void setPinned(boolean pinned) {
+        this.pinned = pinned;
     }
 }

@@ -14,6 +14,12 @@ const DEFAULT_JAVA_CODE = `public class Main {
 }
 `;
 
+const THEMES = [
+  { value: 'vs-dark',    label: '🌙 Dark' },
+  { value: 'vs',         label: '☀️ Light' },
+  { value: 'hc-black',   label: '⬛ High Contrast' },
+];
+
 function Compiler() {
   const token    = localStorage.getItem("token");
   const email    = localStorage.getItem("email");
@@ -30,6 +36,14 @@ function Compiler() {
   const [noteTitle,     setNoteTitle]     = useState("");
   const [receiverEmail, setReceiverEmail] = useState("");
   const [snippetLoaded, setSnippetLoaded] = useState(!!location.state?.code);
+  const [editorTheme,   setEditorTheme]   = useState(
+    () => localStorage.getItem('dv_editor_theme') || 'vs-dark'
+  );
+
+  const changeTheme = (theme) => {
+    setEditorTheme(theme);
+    localStorage.setItem('dv_editor_theme', theme);
+  };
 
   useEffect(() => {
     if (location.state?.code) {
@@ -38,6 +52,19 @@ function Compiler() {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, navigate, location.pathname]);
+
+  /* Ctrl+Enter → run code */
+  useEffect(() => {
+    const handleKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!isRunning) handleRun();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning, code]);
 
   if (!token) return <Navigate to="/login" />;
 
@@ -122,6 +149,21 @@ function Compiler() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            {/* Theme selector */}
+            <select
+              value={editorTheme}
+              onChange={e => changeTheme(e.target.value)}
+              style={{
+                background: 'var(--stone-100)', border: '1px solid var(--stone-200)',
+                borderRadius: 10, padding: '7px 12px', fontFamily: 'inherit',
+                fontSize: '0.8rem', fontWeight: 600, color: 'var(--stone-700)',
+                cursor: 'pointer', outline: 'none',
+              }}
+            >
+              {THEMES.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
             <button onClick={() => { setShareModalOpen(true); setNoteTitle(""); setReceiverEmail(""); }} disabled={isSharing} className="dv-btn dv-btn-ghost" style={{ padding: '7px 16px', borderRadius: 10, fontSize: '0.8125rem' }}>
               <Share2 size={14} /> Share
             </button>
@@ -130,6 +172,7 @@ function Compiler() {
             </button>
             <button onClick={handleRun} disabled={isRunning} className="dv-btn dv-btn-sage" style={{ padding: '8px 20px', borderRadius: 10, fontSize: '0.875rem' }}>
               <Play size={14} fill="currentColor" /> {isRunning ? 'Running…' : 'Run'}
+              <kbd style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 5px' }}>⌃↵</kbd>
             </button>
           </div>
         </div>
@@ -142,7 +185,7 @@ function Compiler() {
             <Editor
               height="100%"
               defaultLanguage="java"
-              theme="vs-dark"
+              theme={editorTheme}
               value={code}
               onChange={value => setCode(value)}
               options={{
