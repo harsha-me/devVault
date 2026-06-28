@@ -24,6 +24,33 @@ const readingTime = (content) => {
   return mins < 1 ? "< 1 min" : `${mins} min read`;
 };
 
+const getTagColors = (tag) => {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash % 360);
+  return {
+    bg: `hsl(${h}, 85%, 95%)`,
+    text: `hsl(${h}, 55%, 30%)`,
+    border: `hsl(${h}, 70%, 85%)`
+  };
+};
+
+const highlightText = (text, search) => {
+  if (!search?.trim()) return text;
+  const parts = text.split(new RegExp(`(${search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+  return (
+    <span>
+      {parts.map((part, i) => 
+        part.toLowerCase() === search.toLowerCase() ? 
+          <mark key={i} style={{ background: 'yellow', color: 'black', padding: '0 2px', borderRadius: 2 }}>{part}</mark> : 
+          part
+      )}
+    </span>
+  );
+};
+
 /* ── Markdown Renderer ──────────────────────────────────────── */
 function MarkdownRenderer({ content }) {
   return (
@@ -148,6 +175,7 @@ const exportPDF = (note) => {
 function EditPanel({ note, onSave, onCancel }) {
   const [editTitle,   setEditTitle]   = useState(note.title);
   const [editContent, setEditContent] = useState(note.content);
+  const [editTags,    setEditTags]    = useState(note.tags ? note.tags.join(", ") : "");
   const [mode,        setMode]        = useState("split");
   const taRef = useRef(null);
 
@@ -176,8 +204,10 @@ function EditPanel({ note, onSave, onCancel }) {
           ))}
         </div>
       </div>
-      <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--stone-200)' }}>
-        <input type="text" value={editTitle} onChange={e=>setEditTitle(e.target.value)} style={{ width:'100%',background:'transparent',border:'none',outline:'none',fontSize:'1.125rem',fontWeight:700,color:'var(--stone-900)',fontFamily:'inherit',boxSizing:'border-box' }} />
+      <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <input type="text" value={editTitle} onChange={e=>setEditTitle(e.target.value)} style={{ flex: 1, background:'transparent',border:'none',outline:'none',fontSize:'1.125rem',fontWeight:700,color:'var(--stone-900)',fontFamily:'inherit',boxSizing:'border-box' }} />
+        <div style={{ width: 1, height: 20, background: 'var(--stone-200)' }} />
+        <input type="text" placeholder="🏷️ Tags (comma-separated)" value={editTags} onChange={e=>setEditTags(e.target.value)} style={{ width: '30%', background:'transparent',border:'none',outline:'none',fontSize:'0.85rem',fontWeight:600,color:'var(--stone-600)',fontFamily:'inherit',boxSizing:'border-box' }} />
       </div>
       {mode !== 'preview' && (
         <div style={{ padding:'0.5rem 1.25rem',borderBottom:'1px solid var(--stone-200)',display:'flex',gap:'0.25rem',flexWrap:'wrap',alignItems:'center',background:'var(--stone-50)' }}>
@@ -207,14 +237,14 @@ function EditPanel({ note, onSave, onCancel }) {
       </div>
       <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end', background: 'var(--stone-50)' }}>
         <button onClick={onCancel} className="dv-btn dv-btn-ghost" style={{ padding: '8px 18px', borderRadius: 10 }}>Cancel</button>
-        <button onClick={() => onSave(editTitle, editContent)} className="dv-btn dv-btn-primary" style={{ padding: '8px 20px', borderRadius: 10 }}>💾 Save Changes</button>
+        <button onClick={() => onSave(editTitle, editContent, editTags)} className="dv-btn dv-btn-primary" style={{ padding: '8px 20px', borderRadius: 10 }}>💾 Save Changes</button>
       </div>
     </div>
   );
 }
 
 /* ── Note Card ──────────────────────────────────────────────── */
-function NoteViewCard({ note, onEdit, onDelete, onShare, onRun, onTogglePin }) {
+function NoteViewCard({ note, onEdit, onDelete, onShare, onRun, onTogglePin, searchQuery }) {
   const [hovered,       setHovered]       = useState(false);
   const [exportMenuOpen,setExportMenuOpen]= useState(false);
   const hasCode = !!extractCode(note.content);
@@ -243,13 +273,37 @@ function NoteViewCard({ note, onEdit, onDelete, onShare, onRun, onTogglePin }) {
 
       <div style={{ padding: '1.125rem 1.25rem', flex: 1 }}>
         <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--stone-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: note.pinned ? '1.5rem' : 0 }}>
-          {note.title}
+          {highlightText(note.title, searchQuery)}
         </h2>
-        <span style={{ fontSize: '0.7rem', color: 'var(--stone-400)', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>
-          📖 {readTime}
-        </span>
+        
+        {/* Reading time & Tag chips */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--stone-400)', fontWeight: 600 }}>
+            📖 {readTime}
+          </span>
+          {note.tags && note.tags.map((tag, idx) => {
+            const colors = getTagColors(tag);
+            return (
+              <span
+                key={idx}
+                style={{
+                  fontSize: '0.625rem',
+                  fontWeight: 700,
+                  padding: '1px 7px',
+                  borderRadius: 20,
+                  background: colors.bg,
+                  color: colors.text,
+                  border: `1px solid ${colors.border}`,
+                }}
+              >
+                {tag}
+              </span>
+            );
+          })}
+        </div>
+
         <p style={{ fontSize: '0.8125rem', color: 'var(--stone-400)', lineHeight: 1.6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-          {preview || "No content preview available."}
+          {highlightText(preview || "No content preview available.", searchQuery)}
         </p>
       </div>
 
@@ -332,6 +386,7 @@ function PreviousNotes() {
   const [selectedNote, setSelectedNote] = useState(null);
   const [search,       setSearch]       = useState("");
   const [shareSearch,  setShareSearch]  = useState("");
+  const [selectedTag,  setSelectedTag]  = useState(null);
   const searchRef = useRef(null);
 
   const fetchNotes = useCallback(async () => {
@@ -374,10 +429,11 @@ function PreviousNotes() {
     catch (e) { console.log(e); alert("Failed to delete note"); }
   };
 
-  const handleUpdate = async (id, newTitle, newContent) => {
+  const handleUpdate = async (id, newTitle, newContent, newTags) => {
     if (!newTitle.trim() || !newContent.trim()) { alert("Title and content cannot be empty."); return; }
+    const tags = newTags ? newTags.split(",").map(t => t.trim()).filter(t => t.length > 0) : [];
     try {
-      await axios.put(`${API_BASE}/updateNote/${id}`, { title: newTitle, content: newContent });
+      await axios.put(`${API_BASE}/updateNote/${id}`, { title: newTitle, content: newContent, tags });
       setEditingId(null); fetchNotes();
     } catch (e) { console.log(e); alert("Failed to update note"); }
   };
@@ -394,10 +450,15 @@ function PreviousNotes() {
     catch (e) { console.log(e); }
   };
 
-  const filtered = notes.filter(n =>
-    n.title.toLowerCase().includes(search.toLowerCase()) ||
-    n.content.toLowerCase().includes(search.toLowerCase())
-  );
+  // Get all unique tags across notes
+  const allTags = Array.from(new Set(notes.flatMap(n => n.tags || [])));
+
+  const filtered = notes.filter(n => {
+    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
+                          n.content.toLowerCase().includes(search.toLowerCase());
+    const matchesTag = !selectedTag || (n.tags && n.tags.includes(selectedTag));
+    return matchesSearch && matchesTag;
+  });
 
   const pinnedFiltered   = filtered.filter(n => n.pinned);
   const unpinnedFiltered = filtered.filter(n => !n.pinned);
@@ -407,7 +468,7 @@ function PreviousNotes() {
       <EditPanel
         key={note.id}
         note={note}
-        onSave={(t, c) => handleUpdate(note.id, t, c)}
+        onSave={(t, c, tags) => handleUpdate(note.id, t, c, tags)}
         onCancel={() => setEditingId(null)}
       />
     ) : (
@@ -419,6 +480,7 @@ function PreviousNotes() {
         onShare={() => { setSelectedNote(note); setShowShareBox(true); }}
         onRun={() => { const code = extractCode(note.content); if (code) navigate('/compiler', { state: { code } }); }}
         onTogglePin={() => handleTogglePin(note.id)}
+        searchQuery={search}
       />
     );
 
@@ -453,6 +515,52 @@ function PreviousNotes() {
               )}
             </div>
           </div>
+
+          {/* Tag filter bar */}
+          {allTags.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '2.25rem', background: 'var(--cream)', padding: '0.75rem 1.25rem', borderRadius: 12, border: '1px solid var(--stone-200)' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--stone-500)' }}>🏷️ Filter by tag:</span>
+              <button
+                onClick={() => setSelectedTag(null)}
+                style={{
+                  padding: '4px 11px',
+                  borderRadius: 20,
+                  border: selectedTag === null ? '1px solid var(--accent)' : '1px solid var(--stone-200)',
+                  background: selectedTag === null ? 'var(--lavender)' : 'var(--stone-100)',
+                  color: selectedTag === null ? 'var(--accent)' : 'var(--stone-600)',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+              >
+                All Notes
+              </button>
+              {allTags.map(tag => {
+                const isSelected = selectedTag === tag;
+                const colors = getTagColors(tag);
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(isSelected ? null : tag)}
+                    style={{
+                      padding: '4px 11px',
+                      borderRadius: 20,
+                      border: `1px solid ${isSelected ? colors.text : 'transparent'}`,
+                      background: isSelected ? colors.bg : 'var(--stone-100)',
+                      color: isSelected ? colors.text : 'var(--stone-600)',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Notes */}
           {filtered.length === 0 ? (

@@ -37,6 +37,7 @@ public class NoteController {
         if (note != null) {
             note.setTitle(updatedNote.getTitle());
             note.setContent(updatedNote.getContent());
+            note.setTags(updatedNote.getTags());
             return noteRepository.save(note);
         }
         return null;

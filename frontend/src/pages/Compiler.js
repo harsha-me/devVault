@@ -14,6 +14,20 @@ const DEFAULT_JAVA_CODE = `public class Main {
 }
 `;
 
+const DEFAULT_CODES = {
+  java: DEFAULT_JAVA_CODE,
+  python: `print("Hello, DevVault!")
+`,
+  javascript: `console.log("Hello, DevVault!");
+`
+};
+
+const LANGUAGES = [
+  { value: 'java',       label: '☕ Java' },
+  { value: 'python',     label: '🐍 Python' },
+  { value: 'javascript', label: '🟨 JavaScript' },
+];
+
 const THEMES = [
   { value: 'vs-dark',    label: '🌙 Dark' },
   { value: 'vs',         label: '☀️ Light' },
@@ -47,6 +61,7 @@ function Compiler() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [language,      setLanguage]      = useState("java");
   const [code,          setCode]          = useState(() => location.state?.code || DEFAULT_JAVA_CODE);
   const [output,        setOutput]        = useState("");
   const [isRunning,     setIsRunning]     = useState(false);
@@ -63,14 +78,25 @@ function Compiler() {
 
   const codeRef = React.useRef(code);
   const isRunningRef = React.useRef(isRunning);
+  const languageRef = React.useRef(language);
 
   // Sync refs
   useEffect(() => { codeRef.current = code; }, [code]);
   useEffect(() => { isRunningRef.current = isRunning; }, [isRunning]);
+  useEffect(() => { languageRef.current = language; }, [language]);
 
   const changeTheme = (theme) => {
     setEditorTheme(theme);
     localStorage.setItem('dv_editor_theme', theme);
+  };
+
+  const handleLanguageChange = (newLang) => {
+    setLanguage(newLang);
+    // If code is currently equal to any default boilerplate code, update to new language default code
+    const currentDefaults = Object.values(DEFAULT_CODES);
+    if (currentDefaults.includes(codeRef.current.trim()) || codeRef.current.trim() === DEFAULT_JAVA_CODE.trim()) {
+      setCode(DEFAULT_CODES[newLang]);
+    }
   };
 
   useEffect(() => {
@@ -101,7 +127,7 @@ function Compiler() {
   const handleRun = async () => {
     setIsRunning(true); setOutput("Running…");
     try {
-      const res = await axios.post(`${API_BASE}/compile`, { code: codeRef.current, language: "java" });
+      const res = await axios.post(`${API_BASE}/compile`, { code: codeRef.current, language: languageRef.current });
       if (res.data.success) setOutput(res.data.output);
       else setOutput((res.data.error || "") + "\n" + (res.data.output || ""));
     } catch (e) {
@@ -113,7 +139,7 @@ function Compiler() {
     if (!noteTitle?.trim()) return;
     setIsSaving(true);
     try {
-      await axios.post(`${API_BASE}/addNote`, { email, title: noteTitle.trim(), content: `\`\`\`java\n${codeRef.current}\n\`\`\`` });
+      await axios.post(`${API_BASE}/addNote`, { email, title: noteTitle.trim(), content: `\`\`\`${languageRef.current}\n${codeRef.current}\n\`\`\`` });
       setSaveModalOpen(false); setNoteTitle("");
     } catch (e) { console.error(e); alert("Failed to save code."); }
     finally { setIsSaving(false); }
@@ -123,7 +149,7 @@ function Compiler() {
     if (!receiverEmail?.trim() || !noteTitle?.trim()) return;
     setIsSharing(true);
     try {
-      await axios.post(`${API_BASE}/shareNote`, { senderEmail: email, receiverEmail: receiverEmail.trim(), title: noteTitle.trim(), content: `\`\`\`java\n${codeRef.current}\n\`\`\`` });
+      await axios.post(`${API_BASE}/shareNote`, { senderEmail: email, receiverEmail: receiverEmail.trim(), title: noteTitle.trim(), content: `\`\`\`${languageRef.current}\n${codeRef.current}\n\`\`\`` });
       setShareModalOpen(false); setNoteTitle(""); setReceiverEmail("");
     } catch (e) { console.error(e); alert("Failed to share code."); }
     finally { setIsSharing(false); }
@@ -148,7 +174,7 @@ function Compiler() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--stone-500)', background: 'var(--stone-100)', padding: '4px 10px', borderRadius: 7, border: '1px solid var(--stone-200)', fontFamily: 'monospace' }}>
-              Main.java
+              {language === 'java' ? 'Main.java' : language === 'python' ? 'Main.py' : 'Main.js'}
             </div>
             {snippetLoaded && (
               <span style={{ fontSize: '0.7rem', fontWeight: 700, background: 'var(--success-light)', color: 'var(--success)', padding: '3px 10px', borderRadius: 6, border: '1px solid var(--accent-sage-lt)' }}>
@@ -158,6 +184,22 @@ function Compiler() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            {/* Language selector */}
+            <select
+              value={language}
+              onChange={e => handleLanguageChange(e.target.value)}
+              style={{
+                background: 'var(--stone-100)', border: '1px solid var(--stone-200)',
+                borderRadius: 10, padding: '7px 12px', fontFamily: 'inherit',
+                fontSize: '0.8rem', fontWeight: 600, color: 'var(--stone-700)',
+                cursor: 'pointer', outline: 'none',
+              }}
+            >
+              {LANGUAGES.map(l => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+
             {/* Theme selector */}
             <select
               value={editorTheme}
@@ -194,6 +236,7 @@ function Compiler() {
             <Editor
               height="100%"
               defaultLanguage="java"
+              language={language}
               theme={editorTheme}
               value={code}
               onChange={value => setCode(value)}
@@ -228,7 +271,7 @@ function Compiler() {
                 <div className="dv-empty">
                   <div className="dv-empty-icon">▶</div>
                   <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--stone-500)' }}>Run your code to see the output here.</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--stone-300)', marginTop: '0.375rem' }}>Supports Java — more languages coming soon</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--stone-300)', marginTop: '0.375rem' }}>Supports Java, Python, and JavaScript</p>
                 </div>
               )}
             </div>

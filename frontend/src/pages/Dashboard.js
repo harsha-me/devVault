@@ -89,7 +89,7 @@ function ToolbarBtn({ onClick, title, children, mono }) {
 }
 
 /* ── Note Card ──────────────────────────────────────────────── */
-function NoteCard({ note, onTogglePin }) {
+function NoteCard({ note, onTogglePin, searchQuery }) {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
   const [pinHovered, setPinHovered] = useState(false);
@@ -122,13 +122,34 @@ function NoteCard({ note, onTogglePin }) {
         marginBottom: '0.375rem', overflow: 'hidden', textOverflow: 'ellipsis',
         whiteSpace: 'nowrap', paddingRight: note.pinned ? '1.25rem' : 0,
       }}>
-        {note.title}
+        {highlightText(note.title, searchQuery)}
       </h3>
 
-      {/* Reading time */}
-      <span style={{ fontSize: '0.7rem', color: 'var(--stone-400)', fontWeight: 600, marginBottom: '0.5rem' }}>
-        📖 {readTime}
-      </span>
+      {/* Reading time & Tag chips */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+        <span style={{ fontSize: '0.7rem', color: 'var(--stone-400)', fontWeight: 600 }}>
+          📖 {readTime}
+        </span>
+        {note.tags && note.tags.map((tag, idx) => {
+          const colors = getTagColors(tag);
+          return (
+            <span
+              key={idx}
+              style={{
+                fontSize: '0.625rem',
+                fontWeight: 700,
+                padding: '1px 7px',
+                borderRadius: 20,
+                background: colors.bg,
+                color: colors.text,
+                border: `1px solid ${colors.border}`,
+              }}
+            >
+              {tag}
+            </span>
+          );
+        })}
+      </div>
 
       <p style={{
         fontSize: '0.8125rem', color: 'var(--stone-400)', lineHeight: 1.6,
@@ -136,7 +157,7 @@ function NoteCard({ note, onTogglePin }) {
         WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
         flex: 1, marginBottom: '0.875rem',
       }}>
-        {preview || "No content preview available."}
+        {highlightText(preview || "No content preview available.", searchQuery)}
       </p>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
@@ -206,6 +227,11 @@ function Dashboard() {
   const [mode,               setMode]               = useState("split");
   const [saving,             setSaving]             = useState(false);
   const [dashboardReminders, setDashboardReminders] = useState({ today: [], upcoming: [], overdue: [] });
+  
+  const [tagsInput,          setTagsInput]          = useState("");
+  const [selectedTag,        setSelectedTag]        = useState(null);
+  const [searchQuery,        setSearchQuery]        = useState("");
+  const searchInputRef = useRef(null);
 
   const fetchNotes = useCallback(async () => {
     try { const res = await axios.get(`${API_BASE}/getNotes/${email}`); setNotes(res.data); }
@@ -242,20 +268,27 @@ function Dashboard() {
         titleInputRef.current?.focus();
         titleInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      // Ctrl+K → focus search input
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, content]);
+  }, [title, content, tagsInput]);
 
   if (!token) return <Navigate to="/login" />;
 
   const handleAddNote = async () => {
     if (!title.trim() || !content.trim()) { alert("Please enter both a title and content for your note."); return; }
     setSaving(true);
+    const tags = tagsInput.split(",").map(t => t.trim()).filter(t => t.length > 0);
     try {
-      await axios.post(`${API_BASE}/addNote`, { email, title, content });
-      setTitle(""); setContent(""); fetchNotes();
+      await axios.post(`${API_BASE}/addNote`, { email, title, content, tags });
+      setTitle(""); setContent(""); setTagsInput(""); fetchNotes();
     } catch (e) { console.log(e); alert("Failed to add note"); }
     finally { setSaving(false); }
   };
@@ -320,9 +353,21 @@ function Dashboard() {
     { label: "Overdue",  value: dashboardReminders.overdue.length,    bg: 'var(--peach)',     border: '#FDDCC4',          color: '#A0522D',          icon: "⚠️" },
   ];
 
+  // Get all unique tags across all notes
+  const allTags = Array.from(new Set(notes.flatMap(n => n.tags || [])));
+
+  // Filter notes by search query and tag
+  const filteredNotes = notes.filter(n => {
+    const matchesSearch = !searchQuery.trim() || 
+      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      n.content.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTag = !selectedTag || (n.tags && n.tags.includes(selectedTag));
+    return matchesSearch && matchesTag;
+  });
+
   /* Split pinned vs unpinned */
-  const pinnedNotes   = notes.filter(n => n.pinned);
-  const unpinnedNotes = notes.filter(n => !n.pinned);
+  const pinnedNotes   = filteredNotes.filter(n => n.pinned);
+  const unpinnedNotes = filteredNotes.filter(n => !n.pinned);
 
   return (
     <div className="dv-page">
@@ -372,9 +417,36 @@ function Dashboard() {
           <div className="dv-card" style={{ marginBottom: '2.25rem', overflow: 'hidden' }}>
 
             <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--stone-50)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.9rem' }}>✏️</span>
-                <span style={{ fontWeight: 700, color: 'var(--stone-700)', fontSize: '0.875rem' }}>New Note</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.9rem' }}>✏️</span>
+                  <span style={{ fontWeight: 700, color: 'var(--stone-700)', fontSize: '0.875rem' }}>New Note</span>
+                </div>
+                <select
+                  defaultValue=""
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val && TEMPLATES[val]) {
+                      if (window.confirm("Load template? This will replace your current note title and content.")) {
+                        setTitle(TEMPLATES[val].title);
+                        setContent(TEMPLATES[val].content);
+                      }
+                      e.target.value = ""; // Reset dropdown
+                    }
+                  }}
+                  style={{
+                    background: 'var(--cream)', border: '1px solid var(--stone-200)',
+                    borderRadius: 8, padding: '4px 10px', fontSize: '0.75rem',
+                    fontWeight: 700, color: 'var(--stone-700)', cursor: 'pointer', outline: 'none'
+                  }}
+                >
+                  <option value="" disabled>📝 Use Template...</option>
+                  <option value="meeting">👥 Meeting Notes</option>
+                  <option value="bug">🐛 Bug Report</option>
+                  <option value="codereview">🔍 Code Review</option>
+                  <option value="journal">📖 Daily Journal</option>
+                  <option value="study">🎓 Study Notes</option>
+                </select>
               </div>
               <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 10, padding: 3, gap: 2, border: '1px solid var(--stone-200)' }}>
                 {[
@@ -396,13 +468,21 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Title */}
-            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--stone-200)' }}>
+            {/* Title & Tags */}
+            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <input
                 ref={titleInputRef}
                 type="text" placeholder="Note title… (Ctrl+N to focus)"
                 value={title} onChange={e => setTitle(e.target.value)}
-                style={{ width: '100%', background: 'transparent', border: 'none', outline: 'none', fontSize: '1.25rem', fontWeight: 700, color: 'var(--stone-900)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '1.25rem', fontWeight: 700, color: 'var(--stone-900)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+              />
+              <div style={{ width: 1, height: 24, background: 'var(--stone-200)' }} />
+              <input
+                type="text"
+                placeholder="🏷️ Tags (comma-separated)"
+                value={tagsInput}
+                onChange={e => setTagsInput(e.target.value)}
+                style={{ width: '30%', background: 'transparent', border: 'none', outline: 'none', fontSize: '0.85rem', color: 'var(--stone-600)', fontFamily: 'inherit', boxSizing: 'border-box', fontWeight: 600 }}
               />
             </div>
 
@@ -468,6 +548,70 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* ── Notes Search & Tag Filters ── */}
+          {notes.length > 0 && (
+            <div style={{ marginBottom: '2rem' }}>
+              {/* Search Bar */}
+              <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="🔍 Search notes... (Ctrl+K to focus)"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="dv-input"
+                  style={{ paddingLeft: 40, width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* Tag Filters */}
+              {allTags.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', background: 'var(--cream)', padding: '0.75rem 1.25rem', borderRadius: 12, border: '1px solid var(--stone-200)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--stone-500)' }}>🏷️ Filter by tag:</span>
+                  <button
+                    onClick={() => setSelectedTag(null)}
+                    style={{
+                      padding: '4px 11px',
+                      borderRadius: 20,
+                      border: selectedTag === null ? '1px solid var(--accent)' : '1px solid var(--stone-200)',
+                      background: selectedTag === null ? 'var(--lavender)' : 'var(--stone-100)',
+                      color: selectedTag === null ? 'var(--accent)' : 'var(--stone-600)',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    All Notes
+                  </button>
+                  {allTags.map(tag => {
+                    const isSelected = selectedTag === tag;
+                    const colors = getTagColors(tag);
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => setSelectedTag(isSelected ? null : tag)}
+                        style={{
+                          padding: '4px 11px',
+                          borderRadius: 20,
+                          border: `1px solid ${isSelected ? colors.text : 'transparent'}`,
+                          background: isSelected ? colors.bg : 'var(--stone-100)',
+                          color: isSelected ? colors.text : 'var(--stone-600)',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Notes Sections ── */}
           {notes.length > 0 ? (
             <>
@@ -480,7 +624,7 @@ function Dashboard() {
                   </div>
                   <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1rem' }}>
                     {pinnedNotes.slice(0, 6).map(note => (
-                      <NoteCard key={note.id} note={note} onTogglePin={handleTogglePin} />
+                      <NoteCard key={note.id} note={note} onTogglePin={handleTogglePin} searchQuery={searchQuery} />
                     ))}
                   </div>
                 </div>
@@ -500,7 +644,7 @@ function Dashboard() {
                   </div>
                   <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1rem' }}>
                     {unpinnedNotes.slice(0, 6).map(note => (
-                      <NoteCard key={note.id} note={note} onTogglePin={handleTogglePin} />
+                      <NoteCard key={note.id} note={note} onTogglePin={handleTogglePin} searchQuery={searchQuery} />
                     ))}
                   </div>
                 </>

@@ -23,13 +23,8 @@ public class CompilerController {
     @PostMapping("/compile")
     public CompileResponse compileAndRun(@RequestBody CompileRequest request) {
         String code = request.getCode();
+        String language = request.getLanguage() != null ? request.getLanguage().toLowerCase() : "java";
         
-        // Default to a simple wrap if they just wrote code without a class
-        if (!code.contains("public class Main")) {
-             // Let the user handle it, as agreed in the plan, but if it's completely raw maybe provide a hint in error.
-             // But actually, we expect the frontend editor to have boilerplate.
-        }
-
         File tempDir = null;
         try {
             // Create a unique temporary directory
@@ -37,45 +32,102 @@ public class CompilerController {
             Path tempDirPath = Paths.get(System.getProperty("java.io.tmpdir"), "devvault-compiler", uniqueID);
             tempDir = Files.createDirectories(tempDirPath).toFile();
             
-            File sourceFile = new File(tempDir, "Main.java");
-            Files.writeString(sourceFile.toPath(), code);
+            if (language.equals("java")) {
+                File sourceFile = new File(tempDir, "Main.java");
+                Files.writeString(sourceFile.toPath(), code);
 
-            // Compile the Java code
-            ProcessBuilder compilePb = new ProcessBuilder("javac", "Main.java");
-            compilePb.directory(tempDir);
-            Process compileProcess = compilePb.start();
-            
-            boolean compiledInTime = compileProcess.waitFor(10, TimeUnit.SECONDS);
-            if (!compiledInTime) {
-                compileProcess.destroy();
-                return new CompileResponse("", "Compilation timed out.", false);
+                // Compile the Java code
+                ProcessBuilder compilePb = new ProcessBuilder("javac", "Main.java");
+                compilePb.directory(tempDir);
+                Process compileProcess = compilePb.start();
+                
+                boolean compiledInTime = compileProcess.waitFor(10, TimeUnit.SECONDS);
+                if (!compiledInTime) {
+                    compileProcess.destroy();
+                    return new CompileResponse("", "Compilation timed out.", false);
+                }
+
+                if (compileProcess.exitValue() != 0) {
+                    // Compilation failed
+                    String error = readStream(compileProcess.getErrorStream());
+                    return new CompileResponse("", error, false);
+                }
+
+                // Run the compiled code
+                ProcessBuilder runPb = new ProcessBuilder("java", "Main");
+                runPb.directory(tempDir);
+                Process runProcess = runPb.start();
+                
+                boolean runInTime = runProcess.waitFor(10, TimeUnit.SECONDS);
+                if (!runInTime) {
+                    runProcess.destroy();
+                    return new CompileResponse("", "Execution timed out.", false);
+                }
+
+                String output = readStream(runProcess.getInputStream());
+                String error = readStream(runProcess.getErrorStream());
+
+                if (runProcess.exitValue() != 0) {
+                    return new CompileResponse(output, error, false);
+                }
+
+                return new CompileResponse(output, "", true);
+
+            } else if (language.equals("python") || language.equals("python3") || language.equals("py")) {
+                File sourceFile = new File(tempDir, "Main.py");
+                Files.writeString(sourceFile.toPath(), code);
+
+                Process runProcess;
+                try {
+                    ProcessBuilder pb = new ProcessBuilder("python", "Main.py");
+                    pb.directory(tempDir);
+                    runProcess = pb.start();
+                } catch (java.io.IOException e) {
+                    ProcessBuilder pb = new ProcessBuilder("python3", "Main.py");
+                    pb.directory(tempDir);
+                    runProcess = pb.start();
+                }
+
+                boolean runInTime = runProcess.waitFor(10, TimeUnit.SECONDS);
+                if (!runInTime) {
+                    runProcess.destroy();
+                    return new CompileResponse("", "Execution timed out.", false);
+                }
+
+                String output = readStream(runProcess.getInputStream());
+                String error = readStream(runProcess.getErrorStream());
+
+                if (runProcess.exitValue() != 0) {
+                    return new CompileResponse(output, error, false);
+                }
+
+                return new CompileResponse(output, "", true);
+
+            } else if (language.equals("javascript") || language.equals("js") || language.equals("node") || language.equals("nodejs")) {
+                File sourceFile = new File(tempDir, "Main.js");
+                Files.writeString(sourceFile.toPath(), code);
+
+                ProcessBuilder pb = new ProcessBuilder("node", "Main.js");
+                pb.directory(tempDir);
+                Process runProcess = pb.start();
+
+                boolean runInTime = runProcess.waitFor(10, TimeUnit.SECONDS);
+                if (!runInTime) {
+                    runProcess.destroy();
+                    return new CompileResponse("", "Execution timed out.", false);
+                }
+
+                String output = readStream(runProcess.getInputStream());
+                String error = readStream(runProcess.getErrorStream());
+
+                if (runProcess.exitValue() != 0) {
+                    return new CompileResponse(output, error, false);
+                }
+
+                return new CompileResponse(output, "", true);
+            } else {
+                return new CompileResponse("", "Unsupported language: " + language, false);
             }
-
-            if (compileProcess.exitValue() != 0) {
-                // Compilation failed
-                String error = readStream(compileProcess.getErrorStream());
-                return new CompileResponse("", error, false);
-            }
-
-            // Run the compiled code
-            ProcessBuilder runPb = new ProcessBuilder("java", "Main");
-            runPb.directory(tempDir);
-            Process runProcess = runPb.start();
-            
-            boolean runInTime = runProcess.waitFor(10, TimeUnit.SECONDS);
-            if (!runInTime) {
-                runProcess.destroy();
-                return new CompileResponse("", "Execution timed out.", false);
-            }
-
-            String output = readStream(runProcess.getInputStream());
-            String error = readStream(runProcess.getErrorStream());
-
-            if (runProcess.exitValue() != 0) {
-                return new CompileResponse(output, error, false);
-            }
-
-            return new CompileResponse(output, "", true);
 
         } catch (Exception e) {
             e.printStackTrace();

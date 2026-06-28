@@ -7,6 +7,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Index;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "note", indexes = {
@@ -26,6 +32,11 @@ public class Note {
     private String content;
 
     private boolean pinned = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "note_tags", joinColumns = @JoinColumn(name = "note_id"))
+    @Column(name = "tag")
+    private List<String> tags = new ArrayList<>();
 
     public Note() {
     }
@@ -68,5 +79,13 @@ public class Note {
 
     public void setPinned(boolean pinned) {
         this.pinned = pinned;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
     }
 }
