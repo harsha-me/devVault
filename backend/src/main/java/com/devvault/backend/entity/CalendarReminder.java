@@ -8,7 +8,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "calendar_reminders")
+@Table(name = "calendar_reminders", indexes = {
+    @Index(name = "idx_calendar_reminder_user", columnList = "userId"),
+    @Index(name = "idx_calendar_reminder_date", columnList = "date")
+})
 public class CalendarReminder {
 
     @Id

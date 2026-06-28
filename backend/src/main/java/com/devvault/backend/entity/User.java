@@ -8,8 +8,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Column;
+import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 
 @Entity
+@Table(name = "user", indexes = {
+    @Index(name = "idx_user_email", columnList = "email")
+})
 public class User {
 
     @Id
@@ -18,6 +23,7 @@ public class User {
 
     private String name;
 
+    @Column(unique = true, nullable = false)
     private String email;
 
     // Write-only: accepted in request body but never sent in response JSON
