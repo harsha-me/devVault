@@ -233,7 +233,7 @@ function PreviousNotes() {
       {/* ── Header ── */}
       <div style={{ background: "rgba(17,17,27,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid #313244", padding: "0 2.5rem", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}>🔥</div>
+          <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}>💻</div>
           <h1 style={{ fontSize: "1.1rem", fontWeight: 800, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             My Notes
           </h1>

@@ -45,7 +45,7 @@ function Login() {
       <div className="bg-gray-900 p-10 rounded-2xl shadow-2xl w-96">
 
         <h1 className="text-white text-4xl font-bold mb-8 text-center">
-          DevVault 🔥
+          DevVault 💻
         </h1>
 
         {error && (

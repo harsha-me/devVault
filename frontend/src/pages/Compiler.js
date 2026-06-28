@@ -22,6 +22,11 @@ function Compiler() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [receiverEmail, setReceiverEmail] = useState("");
+
   if (!token) return <Navigate to="/login" />;
 
   const handleRun = async () => {
@@ -46,18 +51,19 @@ function Compiler() {
   };
 
   const handleSave = async () => {
-    const title = window.prompt("Enter a title for your Java snippet:");
-    if (!title || !title.trim()) return;
+    if (!noteTitle || !noteTitle.trim()) return;
 
     setIsSaving(true);
     try {
       const markdownContent = `\`\`\`java\n${code}\n\`\`\``;
       await axios.post(`${API_BASE}/addNote`, {
         email: email,
-        title: title.trim(),
+        title: noteTitle.trim(),
         content: markdownContent
       });
       alert("Code saved successfully to your Vault!");
+      setSaveModalOpen(false);
+      setNoteTitle("");
     } catch (e) {
       console.error(e);
       alert("Failed to save code.");
@@ -67,11 +73,7 @@ function Compiler() {
   };
 
   const handleShare = async () => {
-    const receiverEmail = window.prompt("Enter your friend's email address:");
-    if (!receiverEmail || !receiverEmail.trim()) return;
-    
-    const title = window.prompt("Enter a title for this snippet:");
-    if (!title || !title.trim()) return;
+    if (!receiverEmail || !receiverEmail.trim() || !noteTitle || !noteTitle.trim()) return;
 
     setIsSharing(true);
     try {
@@ -79,10 +81,13 @@ function Compiler() {
       await axios.post(`${API_BASE}/shareNote`, {
         senderEmail: email,
         receiverEmail: receiverEmail.trim(),
-        title: title.trim(),
+        title: noteTitle.trim(),
         content: markdownContent
       });
       alert("Code sent successfully to " + receiverEmail.trim() + "!");
+      setShareModalOpen(false);
+      setNoteTitle("");
+      setReceiverEmail("");
     } catch (e) {
       console.error(e);
       alert("Failed to share code.");
@@ -102,7 +107,7 @@ function Compiler() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <div style={{ width: 34, height: 34, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🔥</div>
+            <div style={{ width: 34, height: 34, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>💻</div>
             <span style={{ fontSize: "1.3rem", fontWeight: 800, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>DevVault</span>
           </div>
           
@@ -111,7 +116,7 @@ function Compiler() {
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
           <button
-            onClick={handleShare}
+            onClick={() => { setShareModalOpen(true); setNoteTitle(""); setReceiverEmail(""); }}
             disabled={isSharing}
             style={{
               background: "transparent",
@@ -125,7 +130,7 @@ function Compiler() {
           </button>
           
           <button
-            onClick={handleSave}
+            onClick={() => { setSaveModalOpen(true); setNoteTitle(""); }}
             disabled={isSaving}
             style={{
               background: "transparent",
@@ -201,6 +206,53 @@ function Compiler() {
         </div>
 
       </div>
+
+      {/* Save Modal */}
+      {saveModalOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#1e1e2e", padding: "2rem", borderRadius: "12px", width: "400px", border: "1px solid #313244" }}>
+            <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Save Snippet</h3>
+            <input 
+              type="text"
+              placeholder="Snippet Title"
+              value={noteTitle}
+              onChange={(e) => setNoteTitle(e.target.value)}
+              style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", background: "#11111b", border: "1px solid #313244", color: "#cdd6f4", marginBottom: "1.5rem", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
+              <button onClick={() => setSaveModalOpen(false)} style={{ background: "transparent", color: "#a6adc8", border: "none", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+              <button onClick={handleSave} disabled={isSaving} style={{ background: "linear-gradient(135deg,#cba6f7,#89b4fa)", color: "#11111b", border: "none", padding: "8px 20px", borderRadius: "8px", fontWeight: 700, cursor: isSaving ? "not-allowed" : "pointer" }}>{isSaving ? "Saving..." : "Save"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {shareModalOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#1e1e2e", padding: "2rem", borderRadius: "12px", width: "400px", border: "1px solid #313244" }}>
+            <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Share Snippet</h3>
+            <input 
+              type="email"
+              placeholder="Friend's Email"
+              value={receiverEmail}
+              onChange={(e) => setReceiverEmail(e.target.value)}
+              style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", background: "#11111b", border: "1px solid #313244", color: "#cdd6f4", marginBottom: "1rem", boxSizing: "border-box" }}
+            />
+            <input 
+              type="text"
+              placeholder="Snippet Title"
+              value={noteTitle}
+              onChange={(e) => setNoteTitle(e.target.value)}
+              style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", background: "#11111b", border: "1px solid #313244", color: "#cdd6f4", marginBottom: "1.5rem", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
+              <button onClick={() => setShareModalOpen(false)} style={{ background: "transparent", color: "#a6adc8", border: "none", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+              <button onClick={handleShare} disabled={isSharing} style={{ background: "linear-gradient(135deg,#89b4fa,#89dceb)", color: "#11111b", border: "none", padding: "8px 20px", borderRadius: "8px", fontWeight: 700, cursor: isSharing ? "not-allowed" : "pointer" }}>{isSharing ? "Sharing..." : "Share"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
