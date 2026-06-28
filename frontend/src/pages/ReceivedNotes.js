@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -8,6 +8,12 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
+
+const extractCode = (content) => {
+  if (!content) return null;
+  const match = content.match(/```(?:[a-zA-Z0-9+#-]+)?\n([\s\S]*?)\n?```/);
+  return match ? match[1] : null;
+};
 
 /* ─── Reusable Markdown Renderer ─────────────────────────────────── */
 function MarkdownRenderer({ content }) {
@@ -53,6 +59,7 @@ function MarkdownRenderer({ content }) {
 function ReceivedNotes() {
   const token = localStorage.getItem("token");
   const email = localStorage.getItem("email");
+  const navigate = useNavigate();
 
   const [receivedNotes, setReceivedNotes] = useState([]);
   const [selectedNote, setSelectedNote] = useState(null);
@@ -144,12 +151,25 @@ function ReceivedNotes() {
                 <h2 className="text-2xl font-bold text-[#cdd6f4]">{selectedNote.title}</h2>
                 <p className="text-sm text-[#89b4fa] mt-1 font-semibold">From: {selectedNote.senderEmail}</p>
               </div>
-              <button 
-                onClick={() => setSelectedNote(null)}
-                className="text-[#a6adc8] hover:text-[#f38ba8] transition-colors p-2 text-2xl leading-none"
-              >
-                &times;
-              </button>
+              <div className="flex items-center gap-3">
+                {extractCode(selectedNote.content) && (
+                  <button
+                    onClick={() => {
+                      const code = extractCode(selectedNote.content);
+                      navigate("/compiler", { state: { code } });
+                    }}
+                    className="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg font-bold text-sm transition duration-200 flex items-center gap-1"
+                  >
+                    Run Code ⚡
+                  </button>
+                )}
+                <button 
+                  onClick={() => setSelectedNote(null)}
+                  className="text-[#a6adc8] hover:text-[#f38ba8] transition-colors p-2 text-2xl leading-none"
+                >
+                  &times;
+                </button>
+              </div>
             </div>
             
             {/* Modal Body */}

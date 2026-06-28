@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import axios from "axios";
 
@@ -15,8 +15,12 @@ const DEFAULT_JAVA_CODE = `public class Main {
 function Compiler() {
   const token = localStorage.getItem("token");
   const email = localStorage.getItem("email");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [code, setCode] = useState(DEFAULT_JAVA_CODE);
+  const [code, setCode] = useState(() => {
+    return location.state?.code || DEFAULT_JAVA_CODE;
+  });
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -26,6 +30,14 @@ function Compiler() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
   const [receiverEmail, setReceiverEmail] = useState("");
+
+  useEffect(() => {
+    if (location.state?.code) {
+      setCode(location.state.code);
+      // Clean up the location state so that refresh or back/forward actions do not reload the snippet
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   if (!token) return <Navigate to="/login" />;
 

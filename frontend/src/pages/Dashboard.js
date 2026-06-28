@@ -11,6 +11,12 @@ import * as calendarService from "../services/calendarService";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
+const extractCode = (content) => {
+  if (!content) return null;
+  const match = content.match(/```(?:[a-zA-Z0-9+#-]+)?\n([\s\S]*?)\n?```/);
+  return match ? match[1] : null;
+};
+
 /* ─── Reusable Markdown Renderer ─────────────────────────────────── */
 function MarkdownRenderer({ content }) {
   return (
@@ -435,8 +441,10 @@ function Dashboard() {
 
 function NoteCard({ note }) {
   const [hovered, setHovered] = useState(false);
+  const navigate = useNavigate();
   // eslint-disable-next-line no-useless-escape
   const preview = note.content.replace(/```[\s\S]*?```/g, "[code]").replace(/[#*`>_~\[\]]/g, "").trim();
+  const extractedCode = extractCode(note.content);
 
   return (
     <div
@@ -450,17 +458,38 @@ function NoteCard({ note }) {
         transform: hovered ? "translateY(-3px)" : "none",
         boxShadow: hovered ? "0 10px 40px rgba(203,166,247,0.15)" : "none",
         cursor: "default",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
       }}
     >
-      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.5rem", color: "#cdd6f4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {note.title}
-      </h3>
-      <p style={{ fontSize: "0.8rem", color: "#585b70", lineHeight: "1.55", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>
-        {preview || "No content preview available."}
-      </p>
-      <Link to="/previous-notes" style={{ display: "inline-block", marginTop: "0.8rem", color: "#cba6f7", fontSize: "0.78rem", textDecoration: "none", fontWeight: 600 }}>
-        Edit / Share →
-      </Link>
+      <div>
+        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.5rem", color: "#cdd6f4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {note.title}
+        </h3>
+        <p style={{ fontSize: "0.8rem", color: "#585b70", lineHeight: "1.55", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>
+          {preview || "No content preview available."}
+        </p>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.8rem" }}>
+        <Link to="/previous-notes" style={{ color: "#cba6f7", fontSize: "0.78rem", textDecoration: "none", fontWeight: 600 }}>
+          Edit / Share →
+        </Link>
+        {extractedCode && (
+          <button
+            onClick={() => navigate("/compiler", { state: { code: extractedCode } })}
+            style={{
+              background: "transparent", border: "1px solid #10b981", color: "#10b981",
+              padding: "4px 10px", borderRadius: 8, fontSize: "0.75rem", fontWeight: 700,
+              cursor: "pointer", transition: "all 0.2s"
+            }}
+            onMouseEnter={(e) => { e.target.style.background = "#10b981"; e.target.style.color = "#11111b"; }}
+            onMouseLeave={(e) => { e.target.style.background = "transparent"; e.target.style.color = "#10b981"; }}
+          >
+            Run Code ⚡
+          </button>
+        )}
+      </div>
     </div>
   );
 }

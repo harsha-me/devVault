@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -8,6 +8,12 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
+
+const extractCode = (content) => {
+  if (!content) return null;
+  const match = content.match(/```(?:[a-zA-Z0-9+#-]+)?\n([\s\S]*?)\n?```/);
+  return match ? match[1] : null;
+};
 
 /* ─── Markdown Renderer ─────────────────────────────────────────── */
 function MarkdownRenderer({ content }) {
@@ -183,6 +189,7 @@ function EditPanel({ note, onSave, onCancel }) {
 function PreviousNotes() {
   const token = localStorage.getItem("token");
   const email = localStorage.getItem("email");
+  const navigate = useNavigate();
 
   const [notes,        setNotes]        = useState([]);
   const [editingId,    setEditingId]    = useState(null);
@@ -272,6 +279,12 @@ function PreviousNotes() {
                 onEdit={() => setEditingId(note.id)}
                 onDelete={() => handleDelete(note.id)}
                 onShare={() => { setSelectedNote(note); setShowShareBox(true); }}
+                onRun={() => {
+                  const code = extractCode(note.content);
+                  if (code) {
+                    navigate("/compiler", { state: { code } });
+                  }
+                }}
               />
             )
           )}
@@ -310,8 +323,9 @@ function PreviousNotes() {
 }
 
 /* ─── Note View Card ────────────────────────────────────────────── */
-function NoteViewCard({ note, onEdit, onDelete, onShare }) {
+function NoteViewCard({ note, onEdit, onDelete, onShare, onRun }) {
   const [hovered, setHovered] = useState(false);
+  const hasCode = !!extractCode(note.content);
 
   return (
     <div
@@ -333,6 +347,9 @@ function NoteViewCard({ note, onEdit, onDelete, onShare }) {
         </div>
       </div>
       <div style={{ padding: "0.8rem 1.25rem", borderTop: "1px solid #313244", display: "flex", gap: "0.5rem" }}>
+        {hasCode && (
+          <button onClick={onRun} style={{ flex: 1, background: "linear-gradient(135deg,#10b981,#059669)", border: "none", color: "#fff", padding: "7px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: "0.8rem" }}>⚡ Run</button>
+        )}
         <button onClick={onEdit}   style={{ flex: 1, background: "#313244", border: "none", color: "#cba6f7", padding: "7px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>✏️ Edit</button>
         <button onClick={onShare}  style={{ flex: 1, background: "#313244", border: "none", color: "#89b4fa", padding: "7px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>📤 Share</button>
         <button onClick={onDelete} style={{ background: "transparent", border: "1px solid #f38ba8", color: "#f38ba8", padding: "7px 10px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>🗑️</button>
