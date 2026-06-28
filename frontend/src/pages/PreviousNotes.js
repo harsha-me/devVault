@@ -331,6 +331,7 @@ function PreviousNotes() {
   const [showShareBox, setShowShareBox] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
   const [search,       setSearch]       = useState("");
+  const [shareSearch,  setShareSearch]  = useState("");
   const searchRef = useRef(null);
 
   const fetchNotes = useCallback(async () => {
@@ -356,14 +357,14 @@ function PreviousNotes() {
       }
       // Escape → close modal / clear search
       if (e.key === 'Escape') {
-        if (showShareBox) setShowShareBox(false);
+        if (showShareBox) { setShowShareBox(false); setShareSearch(""); }
         else if (editingId) setEditingId(null);
         else if (search)   setSearch('');
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [showShareBox, editingId, search]);
+  }, [showShareBox, editingId, search, shareSearch]);
 
   if (!token) return <Navigate to="/login" />;
 
@@ -497,17 +498,38 @@ function PreviousNotes() {
 
       {/* ── Share Modal ── */}
       {showShareBox && (
-        <div className="dv-overlay" onClick={() => setShowShareBox(false)}>
+        <div className="dv-overlay" onClick={() => { setShowShareBox(false); setShareSearch(""); }}>
           <div className="dv-modal" style={{ width: 380, padding: 0 }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--stone-200)' }}>
+            <div style={{ padding: '1.5rem 1.5rem 1rem', borderBottom: '1px solid var(--stone-200)' }}>
               <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--stone-900)', marginBottom: '0.25rem' }}>Share Note 🚀</h2>
               <p style={{ color: 'var(--stone-400)', fontSize: '0.8125rem' }}>"{selectedNote?.title}"</p>
             </div>
-            <div style={{ maxHeight: 260, overflowY: 'auto', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            
+            {/* Search Input for users */}
+            <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)', background: 'var(--stone-50)' }}>
+              <input
+                type="text"
+                placeholder="Search teammates by name or email..."
+                value={shareSearch}
+                onChange={e => setShareSearch(e.target.value)}
+                className="dv-input"
+                style={{ fontSize: '0.8125rem', paddingTop: 8, paddingBottom: 8 }}
+              />
+            </div>
+
+            <div style={{ maxHeight: 240, overflowY: 'auto', padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {users.filter(u => u.email !== email).length === 0 ? (
                 <p style={{ color: 'var(--stone-400)', textAlign: 'center', padding: '2rem', fontSize: '0.875rem' }}>No other users found.</p>
+              ) : users.filter(u => u.email !== email).filter(u => 
+                u.name.toLowerCase().includes(shareSearch.toLowerCase()) || 
+                u.email.toLowerCase().includes(shareSearch.toLowerCase())
+              ).length === 0 ? (
+                <p style={{ color: 'var(--stone-400)', textAlign: 'center', padding: '2rem', fontSize: '0.875rem' }}>No matching teammates found.</p>
               ) : (
-                users.filter(u => u.email !== email).map(u => (
+                users.filter(u => u.email !== email).filter(u => 
+                  u.name.toLowerCase().includes(shareSearch.toLowerCase()) || 
+                  u.email.toLowerCase().includes(shareSearch.toLowerCase())
+                ).map(u => (
                   <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--stone-100)', padding: '0.75rem 1rem', borderRadius: 12, border: '1px solid var(--stone-200)' }}>
                     <div>
                       <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--stone-900)' }}>{u.name}</div>
@@ -519,7 +541,7 @@ function PreviousNotes() {
               )}
             </div>
             <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--stone-200)' }}>
-              <button onClick={() => setShowShareBox(false)} className="dv-btn dv-btn-ghost" style={{ width: '100%', padding: '10px', borderRadius: 12 }}>Close</button>
+              <button onClick={() => { setShowShareBox(false); setShareSearch(""); }} className="dv-btn dv-btn-ghost" style={{ width: '100%', padding: '10px', borderRadius: 12 }}>Close</button>
             </div>
           </div>
         </div>

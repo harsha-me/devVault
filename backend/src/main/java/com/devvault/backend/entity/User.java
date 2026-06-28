@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Column;
 
 @Entity
 public class User {
@@ -66,5 +68,17 @@ public class User {
 
     public void setMemberSince(java.time.LocalDate memberSince) {
         this.memberSince = memberSince;
+    }
+
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String profilePicture;
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }

@@ -45,7 +45,8 @@ public class ProfileService {
             user.getMemberSince(),
             totalNotes,
             sharedNotes,
-            totalReminders
+            totalReminders,
+            user.getProfilePicture()
         );
     }
 }

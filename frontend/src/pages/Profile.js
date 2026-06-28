@@ -88,6 +88,7 @@ function Profile() {
   // Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [passModalOpen, setPassModalOpen] = useState(false);
+  const [avatarHovered, setAvatarHovered] = useState(false);
 
   // Form Fields
   const [newName, setNewName] = useState("");
@@ -100,6 +101,39 @@ function Profile() {
   const [modalSuccess, setModalSuccess] = useState("");
   const [modalError, setModalError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert("Image size should be less than 1.5MB.");
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      try {
+        await axios.put(`${API_BASE}/updateProfile/${email}`, { profilePicture: base64String });
+        fetchProfile();
+      } catch (err) {
+        alert("Failed to upload profile picture.");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm("Remove profile picture?")) return;
+    try {
+      await axios.put(`${API_BASE}/updateProfile/${email}`, { profilePicture: "" });
+      fetchProfile();
+    } catch (err) {
+      alert("Failed to remove profile picture.");
+    }
+  };
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -217,19 +251,69 @@ function Profile() {
             alignItems: 'center', background: 'var(--cream)', 
             borderColor: 'var(--stone-200)', flexWrap: 'wrap'
           }}>
-            {/* Avatar */}
-            <div style={{
-              width: 100, height: 100, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #DDD8FF, #C8C2FF)',
-              color: 'var(--accent)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '2rem', fontWeight: 800, flexShrink: 0,
-              boxShadow: '0 8px 24px rgba(124,111,247,0.18)',
-              border: '3px solid #fff',
-              animation: 'dvScaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
-            }}>
-              {initials}
+            {/* Avatar with Upload options */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div 
+                onClick={() => document.getElementById("profile-pic-input").click()}
+                onMouseEnter={() => setAvatarHovered(true)}
+                onMouseLeave={() => setAvatarHovered(false)}
+                style={{
+                  width: 100, height: 100, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #DDD8FF, #C8C2FF)',
+                  color: 'var(--accent)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '2rem', fontWeight: 800,
+                  boxShadow: '0 8px 24px rgba(124,111,247,0.18)',
+                  border: '3px solid #fff',
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  animation: 'dvScaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
+                }}
+              >
+                {profile.profilePicture ? (
+                  <img src={profile.profilePicture} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Profile" />
+                ) : (
+                  initials
+                )}
+                {/* Hover overlay indicator */}
+                <div style={{
+                  position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: '0.68rem', fontWeight: 700,
+                  opacity: avatarHovered ? 1 : 0, transition: 'opacity 0.15s ease',
+                  textTransform: 'uppercase', letterSpacing: '0.04em'
+                }}>
+                  Change
+                </div>
+              </div>
+              
+              {/* Remove Photo option */}
+              {profile.profilePicture && (
+                <button 
+                  onClick={handleRemovePhoto}
+                  style={{
+                    position: 'absolute', top: 82, left: '50%', transform: 'translateX(-50%)',
+                    background: 'var(--danger-light)', color: 'var(--danger)',
+                    border: '1px solid var(--stone-200)', borderRadius: 10,
+                    padding: '2px 8px', fontSize: '0.625rem', fontWeight: 700,
+                    cursor: 'pointer', whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                  }}
+                >
+                  Remove
+                </button>
+              )}
             </div>
+
+            {/* Hidden File Input */}
+            <input 
+              type="file" 
+              id="profile-pic-input" 
+              accept="image/*" 
+              onChange={handleFileChange} 
+              style={{ display: 'none' }} 
+            />
             
             {/* User Welcome info */}
             <div style={{ flex: 1, minWidth: 260 }}>

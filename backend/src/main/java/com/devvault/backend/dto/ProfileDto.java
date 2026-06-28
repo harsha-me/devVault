@@ -10,11 +10,12 @@ public class ProfileDto {
     private long totalNotes;
     private long sharedNotes;
     private long totalReminders;
+    private String profilePicture;
 
     public ProfileDto() {
     }
 
-    public ProfileDto(Long id, String name, String email, LocalDate memberSince, long totalNotes, long sharedNotes, long totalReminders) {
+    public ProfileDto(Long id, String name, String email, LocalDate memberSince, long totalNotes, long sharedNotes, long totalReminders, String profilePicture) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -22,6 +23,7 @@ public class ProfileDto {
         this.totalNotes = totalNotes;
         this.sharedNotes = sharedNotes;
         this.totalReminders = totalReminders;
+        this.profilePicture = profilePicture;
     }
 
     public Long getId() {
@@ -78,5 +80,13 @@ public class ProfileDto {
 
     public void setTotalReminders(long totalReminders) {
         this.totalReminders = totalReminders;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }

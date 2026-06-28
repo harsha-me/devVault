@@ -80,10 +80,13 @@ public class UserController {
             return ResponseEntity.status(404).body("User not found");
         }
         String newName = body.get("name");
-        if (newName == null || newName.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Name cannot be empty");
+        if (newName != null && !newName.trim().isEmpty()) {
+            user.setName(newName.trim());
         }
-        user.setName(newName.trim());
+        String profilePicture = body.get("profilePicture");
+        if (profilePicture != null) {
+            user.setProfilePicture(profilePicture);
+        }
         userRepository.save(user);
         return ResponseEntity.ok(user);
     }
