@@ -104,7 +104,7 @@ function ReceivedNotes() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {receivedNotes.map((note) => {
           // Clean up markdown syntax for preview
-          const preview = note.content.replace(/```[\s\S]*?```/g, "[code snippet]").replace(/[#*`>_~\[\]]/g, "").trim();
+          const preview = note.content.replace(/```[\s\S]*?```/g, "[code snippet]").replace(/[#*`>_~[\]]/g, "").trim();
           
           return (
             <div
