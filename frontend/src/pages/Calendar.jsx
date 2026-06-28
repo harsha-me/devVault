@@ -55,6 +55,26 @@ function CalendarPage() {
   };
 
   const handleSaveReminder = async (formData) => {
+    // Validation: Date/Time in the past
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (formData.date < todayStr) {
+      toast.error("Cannot set reminders to past dates!");
+      return;
+    }
+    if (formData.date === todayStr && formData.time) {
+      const nowTime = format(new Date(), 'HH:mm');
+      if (formData.time < nowTime) {
+        toast.error("Cannot set reminders to a past time today!");
+        return;
+      }
+    }
+
+    // Validation: Title empty
+    if (!formData.title.trim()) {
+      toast.error("Title cannot be empty!");
+      return;
+    }
+
     try {
       if (editingReminder) {
         await calendarService.updateReminder(editingReminder.id, formData);
@@ -92,6 +112,12 @@ function CalendarPage() {
     const { source, destination, draggableId } = result;
     
     if (source.droppableId !== destination.droppableId) {
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      if (destination.droppableId < todayStr) {
+        toast.error("Cannot move reminders to past dates!");
+        return;
+      }
+
       const reminderToMove = reminders.find(r => r.id.toString() === draggableId);
       if (reminderToMove) {
         const updatedReminder = { ...reminderToMove, date: destination.droppableId };

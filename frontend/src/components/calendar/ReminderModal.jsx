@@ -60,18 +60,18 @@ const ReminderModal = ({ isOpen, onClose, onSave, selectedDate, existingReminder
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex-1 flex flex-col gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Title</label>
-            <input required type="text" name="title" value={formData.title} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500" placeholder="E.g., Team Meeting" />
+            <input required type="text" name="title" maxLength={100} value={formData.title} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500" placeholder="E.g., Team Meeting" />
           </div>
           
           <div>
             <label className="block text-sm text-gray-400 mb-1">Description</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500 h-24" placeholder="Optional notes..."></textarea>
+            <textarea name="description" maxLength={1000} value={formData.description} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500 h-24" placeholder="Optional notes..."></textarea>
           </div>
 
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="block text-sm text-gray-400 mb-1">Date</label>
-              <input required type="date" name="date" value={formData.date} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500" />
+              <input required type="date" name="date" min={format(new Date(), 'yyyy-MM-dd')} value={formData.date} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500" />
             </div>
             <div className="flex-1">
               <label className="block text-sm text-gray-400 mb-1">Time</label>
