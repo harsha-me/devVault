@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import axios from "axios";
+import { Play, Save, Share2, X } from "lucide-react";
+import Sidebar from "../components/Sidebar";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
@@ -13,28 +15,26 @@ const DEFAULT_JAVA_CODE = `public class Main {
 `;
 
 function Compiler() {
-  const token = localStorage.getItem("token");
-  const email = localStorage.getItem("email");
+  const token    = localStorage.getItem("token");
+  const email    = localStorage.getItem("email");
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [code, setCode] = useState(() => {
-    return location.state?.code || DEFAULT_JAVA_CODE;
-  });
-  const [output, setOutput] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-
+  const [code,          setCode]          = useState(() => location.state?.code || DEFAULT_JAVA_CODE);
+  const [output,        setOutput]        = useState("");
+  const [isRunning,     setIsRunning]     = useState(false);
+  const [isSaving,      setIsSaving]      = useState(false);
+  const [isSharing,     setIsSharing]     = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [noteTitle, setNoteTitle] = useState("");
+  const [shareModalOpen,setShareModalOpen]= useState(false);
+  const [noteTitle,     setNoteTitle]     = useState("");
   const [receiverEmail, setReceiverEmail] = useState("");
+  const [snippetLoaded, setSnippetLoaded] = useState(!!location.state?.code);
 
   useEffect(() => {
     if (location.state?.code) {
       setCode(location.state.code);
-      // Clean up the location state so that refresh or back/forward actions do not reload the snippet
+      setSnippetLoaded(true);
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, navigate, location.pathname]);
@@ -42,228 +42,170 @@ function Compiler() {
   if (!token) return <Navigate to="/login" />;
 
   const handleRun = async () => {
-    setIsRunning(true);
-    setOutput("Running...");
+    setIsRunning(true); setOutput("Running…");
     try {
-      const res = await axios.post(`${API_BASE}/compile`, {
-        code: code,
-        language: "java"
-      });
-      if (res.data.success) {
-        setOutput(res.data.output);
-      } else {
-        setOutput((res.data.error || "") + "\n" + (res.data.output || ""));
-      }
+      const res = await axios.post(`${API_BASE}/compile`, { code, language: "java" });
+      if (res.data.success) setOutput(res.data.output);
+      else setOutput((res.data.error || "") + "\n" + (res.data.output || ""));
     } catch (e) {
-      console.error(e);
-      setOutput("Error connecting to compilation server.");
-    } finally {
-      setIsRunning(false);
-    }
+      console.error(e); setOutput("Error connecting to compilation server.");
+    } finally { setIsRunning(false); }
   };
 
   const handleSave = async () => {
-    if (!noteTitle || !noteTitle.trim()) return;
-
+    if (!noteTitle?.trim()) return;
     setIsSaving(true);
     try {
-      const markdownContent = `\`\`\`java\n${code}\n\`\`\``;
-      await axios.post(`${API_BASE}/addNote`, {
-        email: email,
-        title: noteTitle.trim(),
-        content: markdownContent
-      });
-      alert("Code saved successfully to your Vault!");
-      setSaveModalOpen(false);
-      setNoteTitle("");
-    } catch (e) {
-      console.error(e);
-      alert("Failed to save code.");
-    } finally {
-      setIsSaving(false);
-    }
+      await axios.post(`${API_BASE}/addNote`, { email, title: noteTitle.trim(), content: `\`\`\`java\n${code}\n\`\`\`` });
+      setSaveModalOpen(false); setNoteTitle("");
+    } catch (e) { console.error(e); alert("Failed to save code."); }
+    finally { setIsSaving(false); }
   };
 
   const handleShare = async () => {
-    if (!receiverEmail || !receiverEmail.trim() || !noteTitle || !noteTitle.trim()) return;
-
+    if (!receiverEmail?.trim() || !noteTitle?.trim()) return;
     setIsSharing(true);
     try {
-      const markdownContent = `\`\`\`java\n${code}\n\`\`\``;
-      await axios.post(`${API_BASE}/shareNote`, {
-        senderEmail: email,
-        receiverEmail: receiverEmail.trim(),
-        title: noteTitle.trim(),
-        content: markdownContent
-      });
-      alert("Code sent successfully to " + receiverEmail.trim() + "!");
-      setShareModalOpen(false);
-      setNoteTitle("");
-      setReceiverEmail("");
-    } catch (e) {
-      console.error(e);
-      alert("Failed to share code.");
-    } finally {
-      setIsSharing(false);
-    }
+      await axios.post(`${API_BASE}/shareNote`, { senderEmail: email, receiverEmail: receiverEmail.trim(), title: noteTitle.trim(), content: `\`\`\`java\n${code}\n\`\`\`` });
+      setShareModalOpen(false); setNoteTitle(""); setReceiverEmail("");
+    } catch (e) { console.error(e); alert("Failed to share code."); }
+    finally { setIsSharing(false); }
   };
 
+  const isError = output.includes("Error") || output.includes("Exception") || output.includes("error:");
+
+  /* ── Generic modal ── */
+  const Modal = ({ title, onClose, onConfirm, confirmLabel, confirmLoading, children }) => (
+    <div className="dv-overlay" onClick={onClose}>
+      <div className="dv-modal" style={{ width: 400, padding: 0 }} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '1.375rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--stone-900)' }}>{title}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--stone-400)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: '1.375rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          {children}
+        </div>
+        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
+          <button onClick={onClose} className="dv-btn dv-btn-ghost" style={{ padding: '9px 18px', borderRadius: 11 }}>Cancel</button>
+          <button onClick={onConfirm} disabled={confirmLoading} className="dv-btn dv-btn-primary" style={{ padding: '9px 20px', borderRadius: 11 }}>
+            {confirmLoading ? 'Working…' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#11111b", color: "#cdd6f4", fontFamily: "'Inter', -apple-system, sans-serif" }}>
-      {/* ── Navbar ── */}
-      <nav style={{
-        background: "rgba(17,17,27,0.85)", backdropFilter: "blur(20px)",
-        borderBottom: "1px solid #313244", padding: "0 2rem", height: "60px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexShrink: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <div style={{ width: 34, height: 34, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>💻</div>
-            <span style={{ fontSize: "1.3rem", fontWeight: 800, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>DevVault</span>
+    <div className="dv-page" style={{ flexDirection: 'column' }}>
+      <Sidebar />
+
+      <div style={{ marginLeft: 72, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+
+        {/* ── Top bar ── */}
+        <div style={{
+          height: 56, background: 'var(--cream)',
+          borderBottom: '1px solid var(--stone-200)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 1.75rem', flexShrink: 0,
+          position: 'sticky', top: 0, zIndex: 50,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--stone-500)', background: 'var(--stone-100)', padding: '4px 10px', borderRadius: 7, border: '1px solid var(--stone-200)', fontFamily: 'monospace' }}>
+              Main.java
+            </div>
+            {snippetLoaded && (
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, background: 'var(--success-light)', color: 'var(--success)', padding: '3px 10px', borderRadius: 6, border: '1px solid var(--accent-sage-lt)' }}>
+                ⚡ Snippet loaded
+              </span>
+            )}
           </div>
-          
-          <Link to="/dashboard" style={{ color: "#a6adc8", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600 }}>← Back to Dashboard</Link>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <button onClick={() => { setShareModalOpen(true); setNoteTitle(""); setReceiverEmail(""); }} disabled={isSharing} className="dv-btn dv-btn-ghost" style={{ padding: '7px 16px', borderRadius: 10, fontSize: '0.8125rem' }}>
+              <Share2 size={14} /> Share
+            </button>
+            <button onClick={() => { setSaveModalOpen(true); setNoteTitle(""); }} disabled={isSaving} className="dv-btn dv-btn-ghost" style={{ padding: '7px 16px', borderRadius: 10, fontSize: '0.8125rem' }}>
+              <Save size={14} /> Save
+            </button>
+            <button onClick={handleRun} disabled={isRunning} className="dv-btn dv-btn-sage" style={{ padding: '8px 20px', borderRadius: 10, fontSize: '0.875rem' }}>
+              <Play size={14} fill="currentColor" /> {isRunning ? 'Running…' : 'Run'}
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          <button
-            onClick={() => { setShareModalOpen(true); setNoteTitle(""); setReceiverEmail(""); }}
-            disabled={isSharing}
-            style={{
-              background: "transparent",
-              color: "#89b4fa",
-              border: "1px solid #89b4fa", padding: "7px 16px", borderRadius: 9,
-              fontWeight: 700, fontSize: "0.85rem", cursor: isSharing ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            {isSharing ? "Sharing..." : "↗ Share"}
-          </button>
-          
-          <button
-            onClick={() => { setSaveModalOpen(true); setNoteTitle(""); }}
-            disabled={isSaving}
-            style={{
-              background: "transparent",
-              color: "#cba6f7",
-              border: "1px solid #cba6f7", padding: "7px 16px", borderRadius: 9,
-              fontWeight: 700, fontSize: "0.85rem", cursor: isSaving ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            {isSaving ? "Saving..." : "💾 Save"}
-          </button>
+        {/* ── Editor + Output ── */}
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-          <button
-            onClick={handleRun}
-            disabled={isRunning}
-            style={{
-              background: isRunning ? "#313244" : "linear-gradient(135deg,#a6e3a1,#94e2d5)",
-              color: "#11111b",
-              border: "none", padding: "8px 24px", borderRadius: 9,
-              fontWeight: 800, fontSize: "0.9rem", cursor: isRunning ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
-              display: "flex", alignItems: "center", gap: "0.4rem"
-            }}
-          >
-            {isRunning ? "Running..." : "▶ Run"}
-          </button>
-        </div>
-      </nav>
-
-      {/* ── Split Layout ── */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        
-        {/* Editor Pane */}
-        <div style={{ flex: 1, borderRight: "1px solid #313244", display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "0.5rem 1rem", background: "#181825", borderBottom: "1px solid #313244", fontSize: "0.75rem", color: "#a6adc8", fontWeight: 700, letterSpacing: "0.05em" }}>
-            Main.java
-          </div>
-          <div style={{ flex: 1 }}>
+          {/* Monaco editor pane (stays dark — code editors need dark bg) */}
+          <div style={{ flex: 1, borderRight: '1px solid var(--stone-200)', display: 'flex', flexDirection: 'column' }}>
             <Editor
               height="100%"
               defaultLanguage="java"
               theme="vs-dark"
               value={code}
-              onChange={(value) => setCode(value)}
+              onChange={value => setCode(value)}
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,
-                fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                fontFamily: "'JetBrains Mono','Fira Code',monospace",
                 scrollBeyondLastLine: false,
-                padding: { top: 16 }
+                padding: { top: 16 },
+                lineHeight: 22,
               }}
             />
           </div>
-        </div>
 
-        {/* Output Pane */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#1e1e2e" }}>
-          <div style={{ padding: "0.5rem 1rem", background: "#181825", borderBottom: "1px solid #313244", fontSize: "0.75rem", color: "#a6adc8", fontWeight: 700, letterSpacing: "0.05em" }}>
-            Output
-          </div>
-          <div style={{ flex: 1, padding: "1rem", overflowY: "auto" }}>
-            <pre style={{
-              margin: 0,
-              color: output.includes("Error") || output.includes("Exception") || output.includes("error:") ? "#f38ba8" : "#a6e3a1",
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-              fontSize: "0.9rem",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all"
-            }}>
-              {output || "Run your code to see the output here."}
-            </pre>
+          {/* Output pane */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--ivory)' }}>
+            <div style={{ padding: '0.5rem 1.25rem', background: 'var(--cream)', borderBottom: '1px solid var(--stone-200)', fontSize: '0.7rem', color: 'var(--stone-400)', fontWeight: 700, letterSpacing: '0.06em' }}>
+              OUTPUT
+            </div>
+            <div style={{ flex: 1, padding: '1.25rem', overflowY: 'auto' }}>
+              {output ? (
+                <pre style={{
+                  margin: 0,
+                  color: isError ? 'var(--danger)' : 'var(--accent-sage)',
+                  fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                  fontSize: '0.875rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                  lineHeight: 1.7,
+                }}>
+                  {output}
+                </pre>
+              ) : (
+                <div className="dv-empty">
+                  <div className="dv-empty-icon">▶</div>
+                  <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--stone-500)' }}>Run your code to see the output here.</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--stone-300)', marginTop: '0.375rem' }}>Supports Java — more languages coming soon</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
       </div>
 
       {/* Save Modal */}
       {saveModalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#1e1e2e", padding: "2rem", borderRadius: "12px", width: "400px", border: "1px solid #313244" }}>
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Save Snippet</h3>
-            <input 
-              type="text"
-              placeholder="Snippet Title"
-              value={noteTitle}
-              onChange={(e) => setNoteTitle(e.target.value)}
-              style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", background: "#11111b", border: "1px solid #313244", color: "#cdd6f4", marginBottom: "1.5rem", boxSizing: "border-box" }}
-            />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
-              <button onClick={() => setSaveModalOpen(false)} style={{ background: "transparent", color: "#a6adc8", border: "none", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleSave} disabled={isSaving} style={{ background: "linear-gradient(135deg,#cba6f7,#89b4fa)", color: "#11111b", border: "none", padding: "8px 20px", borderRadius: "8px", fontWeight: 700, cursor: isSaving ? "not-allowed" : "pointer" }}>{isSaving ? "Saving..." : "Save"}</button>
-            </div>
+        <Modal title="💾 Save Snippet" onClose={() => setSaveModalOpen(false)} onConfirm={handleSave} confirmLabel="Save to Vault" confirmLoading={isSaving}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', marginBottom: '0.5rem' }}>Snippet title</label>
+            <input type="text" placeholder="My Algorithm" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} className="dv-input" />
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Share Modal */}
       {shareModalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#1e1e2e", padding: "2rem", borderRadius: "12px", width: "400px", border: "1px solid #313244" }}>
-            <h3 style={{ marginTop: 0, marginBottom: "1.5rem" }}>Share Snippet</h3>
-            <input 
-              type="email"
-              placeholder="Friend's Email"
-              value={receiverEmail}
-              onChange={(e) => setReceiverEmail(e.target.value)}
-              style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", background: "#11111b", border: "1px solid #313244", color: "#cdd6f4", marginBottom: "1rem", boxSizing: "border-box" }}
-            />
-            <input 
-              type="text"
-              placeholder="Snippet Title"
-              value={noteTitle}
-              onChange={(e) => setNoteTitle(e.target.value)}
-              style={{ width: "100%", padding: "0.75rem", borderRadius: "8px", background: "#11111b", border: "1px solid #313244", color: "#cdd6f4", marginBottom: "1.5rem", boxSizing: "border-box" }}
-            />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
-              <button onClick={() => setShareModalOpen(false)} style={{ background: "transparent", color: "#a6adc8", border: "none", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-              <button onClick={handleShare} disabled={isSharing} style={{ background: "linear-gradient(135deg,#89b4fa,#89dceb)", color: "#11111b", border: "none", padding: "8px 20px", borderRadius: "8px", fontWeight: 700, cursor: isSharing ? "not-allowed" : "pointer" }}>{isSharing ? "Sharing..." : "Share"}</button>
-            </div>
+        <Modal title="↗ Share Snippet" onClose={() => setShareModalOpen(false)} onConfirm={handleShare} confirmLabel="Send Snippet" confirmLoading={isSharing}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', marginBottom: '0.5rem' }}>Recipient's email</label>
+            <input type="email" placeholder="friend@example.com" value={receiverEmail} onChange={e => setReceiverEmail(e.target.value)} className="dv-input" />
           </div>
-        </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', marginBottom: '0.5rem' }}>Snippet title</label>
+            <input type="text" placeholder="Binary Search" value={noteTitle} onChange={e => setNoteTitle(e.target.value)} className="dv-input" />
+          </div>
+        </Modal>
       )}
     </div>
   );

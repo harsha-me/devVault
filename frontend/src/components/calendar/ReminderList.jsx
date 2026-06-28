@@ -1,48 +1,94 @@
 import React from 'react';
 import { format } from 'date-fns';
-import ReminderCard from './ReminderCard';
 import { Droppable } from '@hello-pangea/dnd';
 import { Plus } from 'lucide-react';
+import ReminderCard from './ReminderCard';
 
 const ReminderList = ({ selectedDate, reminders, onAdd, onEdit, onDelete }) => {
-  const dateStr = format(selectedDate, 'yyyy-MM-dd');
-  const todaysReminders = reminders.filter(r => r.date === dateStr);
+  const dateStr        = format(selectedDate, 'yyyy-MM-dd');
+  const todayReminders = reminders.filter(r => r.date === dateStr);
 
   return (
-    <div className="w-80 bg-[#1e1e2e] border border-gray-800 rounded-xl flex flex-col h-full shadow-2xl">
-      <div className="p-5 border-b border-gray-800 flex justify-between items-center bg-[#11111b] rounded-t-xl">
+    <div style={{
+      width: 300, minWidth: 300, display: 'flex', flexDirection: 'column',
+      background: 'var(--cream)',
+      border: '1px solid var(--stone-200)',
+      borderRadius: 20,
+      boxShadow: '0 2px 12px rgba(74,69,64,0.06)',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '1rem 1.125rem', borderBottom: '1px solid var(--stone-200)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        background: 'var(--stone-50)',
+      }}>
         <div>
-          <h2 className="text-xl font-bold text-gray-100">{format(selectedDate, 'MMMM d')}</h2>
-          <p className="text-sm text-gray-400">{format(selectedDate, 'EEEE')}</p>
+          <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--stone-900)', marginBottom: '0.125rem' }}>
+            {format(selectedDate, 'MMMM d')}
+          </h2>
+          <p style={{ fontSize: '0.75rem', color: 'var(--stone-400)', fontWeight: 500 }}>
+            {format(selectedDate, 'EEEE')} · {todayReminders.length} reminder{todayReminders.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <button 
+        <button
           onClick={onAdd}
-          className="bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] p-2 rounded-lg text-[#11111b] hover:shadow-lg transition-all"
+          style={{
+            width: 34, height: 34, borderRadius: 11,
+            background: 'var(--accent)', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(124,111,247,0.25)',
+            transition: 'all 0.18s ease',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-hover)'; e.currentTarget.style.transform = 'scale(1.06)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          <Plus size={20} />
+          <Plus size={18} />
         </button>
       </div>
-      
+
+      {/* Droppable list */}
       <Droppable droppableId={dateStr}>
         {(provided, snapshot) => (
-          <div 
-            className={`flex-1 p-4 overflow-y-auto ${snapshot.isDraggingOver ? 'bg-gray-800/30' : ''}`}
+          <div
             ref={provided.innerRef}
             {...provided.droppableProps}
+            style={{
+              flex: 1, padding: '0.875rem', overflowY: 'auto',
+              background: snapshot.isDraggingOver ? 'var(--lavender)' : 'transparent',
+              transition: 'background 0.15s ease',
+            }}
           >
-            {todaysReminders.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                <p className="text-sm">No reminders for this day.</p>
-                <button onClick={onAdd} className="text-blue-400 mt-2 text-sm hover:underline">Create one</button>
+            {todayReminders.length === 0 ? (
+              <div style={{
+                height: '100%', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                color: 'var(--stone-300)', textAlign: 'center',
+                padding: '2rem 1rem',
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🌿</div>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--stone-400)' }}>No reminders</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--stone-300)', marginTop: '0.25rem' }}>A calm, clear day.</p>
+                <button
+                  onClick={onAdd}
+                  style={{
+                    marginTop: '1rem', background: 'none', border: 'none',
+                    color: 'var(--accent)', fontSize: '0.8125rem', fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  + Add one
+                </button>
               </div>
             ) : (
-              todaysReminders.map((rem, index) => (
-                <ReminderCard 
-                  key={rem.id} 
-                  reminder={rem} 
-                  index={index} 
-                  onEdit={onEdit} 
-                  onDelete={onDelete} 
+              todayReminders.map((rem, index) => (
+                <ReminderCard
+                  key={rem.id}
+                  reminder={rem}
+                  index={index}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
                 />
               ))
             )}

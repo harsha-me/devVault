@@ -1,3 +1,304 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  --ivory:          #FAF9F6;
+  --cream:          #F7F4ED;
+  --sage:           #E7F0E8;
+  --pale-blue:      #EDF5FF;
+  --lavender:       #F3F0FF;
+  --peach:          #FFF3EC;
+
+  --stone-50:       #FDFCFA;
+  --stone-100:      #F0EDE6;
+  --stone-200:      #E6E1D8;
+  --stone-300:      #CEC8BF;
+  --stone-400:      #9B9287;
+  --stone-500:      #7A736A;
+  --stone-600:      #6B6460;
+  --stone-700:      #4A4540;
+  --stone-900:      #2A2520;
+
+  --accent:         #7C6FF7;
+  --accent-light:   #EDEAFF;
+  --accent-hover:   #6B5EE6;
+  --accent-sage:    #5C8A6A;
+  --accent-sage-lt: #D4E8D8;
+
+  --danger:         #C0392B;
+  --danger-light:   #FEE8E6;
+  --warning:        #D97706;
+  --warning-light:  #FFF3EC;
+  --success:        #2E7D52;
+  --success-light:  #E7F0E8;
+}
+
+/* ── Global Reset ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--ivory);
+  color: var(--stone-700);
+  line-height: 1.7;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar            { width: 5px; height: 5px; }
+::-webkit-scrollbar-track      { background: transparent; }
+::-webkit-scrollbar-thumb      { background: var(--stone-300); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover{ background: var(--stone-400); }
+
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes dvFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dvFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dvScaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes dvSlideRight {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes dvPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.dv-fade-up    { animation: dvFadeUp    0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dv-fade-in    { animation: dvFadeIn    0.3s ease both; }
+.dv-scale-in   { animation: dvScaleIn   0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dv-slide-right{ animation: dvSlideRight 0.3s ease both; }
+
+/* staggered children */
+.dv-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.dv-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.dv-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.dv-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.dv-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.dv-stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.dv-page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--ivory);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.dv-main {
+  margin-left: 72px;
+  flex: 1;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.dv-content {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 2.75rem;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.dv-card {
+  background: var(--cream);
+  border-radius: 20px;
+  border: 1px solid var(--stone-200);
+  box-shadow: 0 1px 4px rgba(74,69,64,0.05), 0 4px 16px rgba(74,69,64,0.06);
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+.dv-card-hover:hover {
+  box-shadow: 0 4px 16px rgba(74,69,64,0.09), 0 12px 32px rgba(74,69,64,0.07);
+  transform: translateY(-2px);
+}
+
+/* ── Buttons ────────────────────────────────────────────────── */
+.dv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Plus Jakarta Sans', inherit;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.dv-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.dv-btn-primary {
+  background: var(--stone-900);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(42,37,32,0.18);
+}
+.dv-btn-primary:hover:not(:disabled) {
+  background: #1C1814;
+  box-shadow: 0 4px 14px rgba(42,37,32,0.25);
+  transform: translateY(-1px);
+}
+
+.dv-btn-accent {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124,111,247,0.25);
+}
+.dv-btn-accent:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 14px rgba(124,111,247,0.35);
+  transform: translateY(-1px);
+}
+
+.dv-btn-ghost {
+  background: var(--stone-100);
+  color: var(--stone-700);
+  border: 1px solid var(--stone-200);
+}
+.dv-btn-ghost:hover:not(:disabled) {
+  background: var(--stone-200);
+  transform: translateY(-1px);
+}
+
+.dv-btn-sage {
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--accent-sage-lt);
+}
+.dv-btn-sage:hover:not(:disabled) {
+  background: var(--accent-sage-lt);
+  transform: translateY(-1px);
+}
+
+.dv-btn-danger {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid #FDDCC4;
+}
+.dv-btn-danger:hover:not(:disabled) {
+  background: #FDDCC4;
+  transform: translateY(-1px);
+}
+
+/* ── Inputs ─────────────────────────────────────────────────── */
+.dv-input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--stone-200);
+  background: var(--cream);
+  color: var(--stone-900);
+  font-family: 'Plus Jakarta Sans', inherit;
+  font-size: 0.9375rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  line-height: 1.5;
+}
+.dv-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(124,111,247,0.1);
+}
+.dv-input::placeholder { color: var(--stone-400); }
+
+.dv-select {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--stone-200);
+  background: var(--cream);
+  color: var(--stone-700);
+  font-family: 'Plus Jakarta Sans', inherit;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239B9287' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+.dv-select:focus { border-color: var(--accent); }
+
+/* ── Stat Pill Cards ────────────────────────────────────────── */
+.dv-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1.125rem 1.25rem;
+  border-radius: 18px;
+  border: 1px solid transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.dv-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(74,69,64,0.08);
+}
+
+/* ── Section Headings ───────────────────────────────────────── */
+.dv-section-heading {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--stone-900);
+  letter-spacing: -0.01em;
+}
+
+/* ── Empty State ────────────────────────────────────────────── */
+.dv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--stone-400);
+}
+.dv-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+/* ── Modal Overlay ──────────────────────────────────────────── */
+.dv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(42,37,32,0.35);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 1.5rem;
+  animation: dvFadeIn 0.2s ease both;
+}
+.dv-modal {
+  background: var(--ivory);
+  border-radius: 24px;
+  border: 1px solid var(--stone-200);
+  box-shadow: 0 24px 64px rgba(42,37,32,0.18), 0 8px 24px rgba(42,37,32,0.1);
+  overflow: hidden;
+  animation: dvScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

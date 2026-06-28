@@ -2,38 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { format } from 'date-fns';
 
+const COLORS = ['#7C6FF7', '#5C8A6A', '#D97706', '#2E6BAA', '#C0392B', '#8E44AD', '#2980B9'];
+
 const ReminderModal = ({ isOpen, onClose, onSave, selectedDate, existingReminder }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    time: '',
-    priority: 'Medium',
-    category: 'Personal',
-    repeatType: 'None',
-    reminderColor: '#89b4fa',
-    notificationEnabled: false,
-    notificationTime: '15 min'
+    title: '', description: '', date: '', time: '',
+    priority: 'Medium', category: 'Personal',
+    repeatType: 'None', reminderColor: '#7C6FF7',
+    notificationEnabled: false, notificationTime: '15 min',
   });
 
   useEffect(() => {
     if (isOpen) {
-      if (existingReminder) {
-        setFormData({ ...existingReminder });
-      } else {
-        setFormData({
-          title: '',
-          description: '',
-          date: format(selectedDate, 'yyyy-MM-dd'),
-          time: '',
-          priority: 'Medium',
-          category: 'Personal',
-          repeatType: 'None',
-          reminderColor: '#89b4fa',
-          notificationEnabled: false,
-          notificationTime: '15 min'
-        });
-      }
+      setFormData(existingReminder ? { ...existingReminder } : {
+        title: '', description: '',
+        date: format(selectedDate, 'yyyy-MM-dd'), time: '',
+        priority: 'Medium', category: 'Personal',
+        repeatType: 'None', reminderColor: '#7C6FF7',
+        notificationEnabled: false, notificationTime: '15 min',
+      });
     }
   }, [isOpen, selectedDate, existingReminder]);
 
@@ -44,100 +31,171 @@ const ReminderModal = ({ isOpen, onClose, onSave, selectedDate, existingReminder
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-  };
+  const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
+
+  const Label = ({ children }) => (
+    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', marginBottom: '0.375rem' }}>
+      {children}
+    </label>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1e1e2e] w-full max-w-lg rounded-2xl shadow-2xl border border-gray-800 flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center p-5 border-b border-gray-800">
-          <h2 className="text-xl font-bold text-gray-100">{existingReminder ? 'Edit Reminder' : 'New Reminder'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+    <div
+      className="dv-overlay"
+      onClick={onClose}
+    >
+      <div
+        className="dv-modal"
+        style={{ width: '100%', maxWidth: 500, maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal header */}
+        <div style={{
+          padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--stone-200)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'var(--stone-50)', borderRadius: '24px 24px 0 0',
+        }}>
+          <div>
+            <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--stone-900)' }}>
+              {existingReminder ? '✏️ Edit Reminder' : '🌿 New Reminder'}
+            </h2>
+            <p style={{ fontSize: '0.75rem', color: 'var(--stone-400)', marginTop: '0.125rem' }}>
+              {format(selectedDate, 'EEEE, MMMM d')}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 32, height: 32, borderRadius: 9,
+              background: 'var(--stone-100)', border: '1px solid var(--stone-200)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--stone-400)', cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-light)'; e.currentTarget.style.color = 'var(--danger)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--stone-100)'; e.currentTarget.style.color = 'var(--stone-400)'; }}
+          >
+            <X size={16} />
+          </button>
         </div>
-        
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex-1 flex flex-col gap-4">
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ padding: '1.25rem 1.5rem', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Title</label>
-            <input required type="text" name="title" maxLength={100} value={formData.title} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500" placeholder="E.g., Team Meeting" />
+            <Label>Title *</Label>
+            <input required type="text" name="title" maxLength={100} value={formData.title} onChange={handleChange} className="dv-input" placeholder="e.g. Team Standup" />
           </div>
-          
+
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Description</label>
-            <textarea name="description" maxLength={1000} value={formData.description} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500 h-24" placeholder="Optional notes..."></textarea>
+            <Label>Description</Label>
+            <textarea name="description" maxLength={1000} value={formData.description} onChange={handleChange} placeholder="Optional notes…" style={{
+              width: '100%', padding: '11px 14px', borderRadius: 12,
+              border: '1.5px solid var(--stone-200)', background: 'var(--cream)',
+              color: 'var(--stone-900)', fontFamily: 'inherit', fontSize: '0.9375rem',
+              outline: 'none', resize: 'vertical', minHeight: 80, lineHeight: 1.6,
+              transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box',
+            }}
+            onFocus={e => { e.target.style.borderColor='var(--accent)'; e.target.style.boxShadow='0 0 0 4px rgba(124,111,247,0.1)'; }}
+            onBlur={e => { e.target.style.borderColor='var(--stone-200)'; e.target.style.boxShadow='none'; }}
+            />
           </div>
 
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm text-gray-400 mb-1">Date</label>
-              <input required type="date" name="date" min={format(new Date(), 'yyyy-MM-dd')} value={formData.date} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm text-gray-400 mb-1">Time</label>
-              <input type="time" name="time" value={formData.time || ''} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500" />
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm text-gray-400 mb-1">Category</label>
-              <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500">
-                <option value="Personal">Personal</option>
-                <option value="Study">Study</option>
-                <option value="Work">Work</option>
-                <option value="Health">Health</option>
-                <option value="Custom">Custom</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm text-gray-400 mb-1">Priority</label>
-              <select name="priority" value={formData.priority} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500">
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-sm text-gray-400 mb-1">Color</label>
-              <input type="color" name="reminderColor" value={formData.reminderColor} onChange={handleChange} className="w-full h-11 bg-[#11111b] border border-gray-800 rounded-lg p-1 cursor-pointer" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm text-gray-400 mb-1">Repeat</label>
-              <select name="repeatType" value={formData.repeatType} onChange={handleChange} className="w-full bg-[#11111b] border border-gray-800 rounded-lg p-2.5 text-gray-200 focus:outline-none focus:border-blue-500">
-                <option value="None">None</option>
-                <option value="Daily">Daily</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Monthly">Monthly</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="border border-gray-800 rounded-lg p-3 bg-[#11111b] flex items-center justify-between mt-2">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="notificationEnabled" checked={formData.notificationEnabled} onChange={handleChange} className="w-4 h-4 rounded bg-gray-900 border-gray-700" />
-                <span className="text-gray-200">Enable Notification</span>
-              </label>
+              <Label>Date *</Label>
+              <input required type="date" name="date" min={format(new Date(), 'yyyy-MM-dd')} value={formData.date} onChange={handleChange} className="dv-input" style={{ paddingTop: 11, paddingBottom: 11 }} />
             </div>
+            <div>
+              <Label>Time</Label>
+              <input type="time" name="time" value={formData.time || ''} onChange={handleChange} className="dv-input" style={{ paddingTop: 11, paddingBottom: 11 }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <Label>Category</Label>
+              <select name="category" value={formData.category} onChange={handleChange} className="dv-select">
+                {['Personal','Study','Work','Health','Custom'].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <Label>Priority</Label>
+              <select name="priority" value={formData.priority} onChange={handleChange} className="dv-select">
+                {['Low','Medium','High'].map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {/* Color picker */}
+            <div>
+              <Label>Color</Label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                {COLORS.map(c => (
+                  <button
+                    key={c} type="button" onClick={() => setFormData(p => ({...p, reminderColor: c}))}
+                    style={{
+                      width: 26, height: 26, borderRadius: '50%', background: c, border: 'none',
+                      cursor: 'pointer',
+                      outline: formData.reminderColor === c ? `3px solid ${c}` : '3px solid transparent',
+                      outlineOffset: 2,
+                      transition: 'transform 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  />
+                ))}
+                {/* Custom color input */}
+                <label style={{ width: 26, height: 26, borderRadius: '50%', border: '2px solid var(--stone-200)', overflow: 'hidden', cursor: 'pointer', position: 'relative' }} title="Custom color">
+                  <input type="color" name="reminderColor" value={formData.reminderColor} onChange={handleChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: 12, color: 'var(--stone-400)' }}>+</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <Label>Repeat</Label>
+              <select name="repeatType" value={formData.repeatType} onChange={handleChange} className="dv-select">
+                {['None','Daily','Weekly','Monthly'].map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Notification toggle */}
+          <div style={{ background: 'var(--stone-100)', borderRadius: 12, padding: '0.875rem 1rem', border: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer' }}>
+              <div style={{ position: 'relative' }}>
+                <input type="checkbox" name="notificationEnabled" checked={formData.notificationEnabled} onChange={handleChange} style={{ display: 'none' }} />
+                <div onClick={() => setFormData(p => ({...p, notificationEnabled: !p.notificationEnabled}))} style={{
+                  width: 40, height: 22, borderRadius: 11,
+                  background: formData.notificationEnabled ? 'var(--accent)' : 'var(--stone-300)',
+                  cursor: 'pointer', transition: 'background 0.2s', position: 'relative',
+                }}>
+                  <div style={{
+                    position: 'absolute', top: 3,
+                    left: formData.notificationEnabled ? 21 : 3,
+                    width: 16, height: 16, borderRadius: '50%',
+                    background: '#fff', transition: 'left 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </div>
+              </div>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--stone-700)' }}>Enable Notification</span>
+            </label>
             {formData.notificationEnabled && (
-              <select name="notificationTime" value={formData.notificationTime} onChange={handleChange} className="bg-[#1e1e2e] border border-gray-800 rounded px-2 py-1 text-sm text-gray-200">
-                <option value="5 min">5 min before</option>
-                <option value="15 min">15 min before</option>
-                <option value="30 min">30 min before</option>
-                <option value="1 hour">1 hour before</option>
+              <select name="notificationTime" value={formData.notificationTime} onChange={handleChange} className="dv-select" style={{ width: 'auto', padding: '6px 30px 6px 10px', fontSize: '0.8rem' }}>
+                {['5 min','15 min','30 min','1 hour'].map(t => <option key={t} value={t}>{t} before</option>)}
               </select>
             )}
           </div>
-          
-          <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-gray-800">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
-            <button type="submit" className="px-6 py-2 bg-gradient-to-r from-[#cba6f7] to-[#89b4fa] text-[#11111b] font-bold rounded-lg hover:opacity-90 transition-opacity">Save Reminder</button>
-          </div>
         </form>
+
+        {/* Footer */}
+        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end', background: 'var(--stone-50)', borderRadius: '0 0 24px 24px' }}>
+          <button type="button" onClick={onClose} className="dv-btn dv-btn-ghost" style={{ padding: '9px 20px', borderRadius: 12 }}>Cancel</button>
+          <button onClick={handleSubmit} className="dv-btn dv-btn-accent" style={{ padding: '9px 22px', borderRadius: 12 }}>
+            {existingReminder ? '✓ Save Changes' : '+ Create Reminder'}
+          </button>
+        </div>
       </div>
     </div>
   );

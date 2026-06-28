@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { format, addMonths, subMonths } from 'date-fns';
 import { DragDropContext } from '@hello-pangea/dnd';
 import { Toaster, toast } from 'react-hot-toast';
@@ -7,242 +7,166 @@ import { Download, ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import CalendarGrid from '../components/calendar/CalendarGrid';
-import ReminderList from '../components/calendar/ReminderList';
-import ReminderModal from '../components/calendar/ReminderModal';
+import CalendarGrid   from '../components/calendar/CalendarGrid';
+import ReminderList   from '../components/calendar/ReminderList';
+import ReminderModal  from '../components/calendar/ReminderModal';
 import * as calendarService from '../services/calendarService';
+import Sidebar from '../components/Sidebar';
 
 function CalendarPage() {
-  const token = localStorage.getItem("token");
-  
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [reminders, setReminders] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingReminder, setEditingReminder] = useState(null);
+  const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    if (token) {
-      fetchReminders();
-    }
-  }, [token]);
+  const [currentDate,    setCurrentDate]    = useState(new Date());
+  const [selectedDate,   setSelectedDate]   = useState(new Date());
+  const [reminders,      setReminders]      = useState([]);
+  const [isModalOpen,    setIsModalOpen]    = useState(false);
+  const [editingReminder,setEditingReminder]= useState(null);
+
+  useEffect(() => { if (token) fetchReminders(); }, [token]);
 
   const fetchReminders = async () => {
-    try {
-      const data = await calendarService.getAllReminders();
-      setReminders(data);
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to fetch reminders");
-    }
+    try { setReminders(await calendarService.getAllReminders()); }
+    catch (e) { console.error(e); toast.error('Failed to fetch reminders'); }
   };
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  
-  const handleDateClick = (day) => {
-    setSelectedDate(day);
-  };
+  const handleDateClick = (day) => setSelectedDate(day);
 
-  const openAddModal = () => {
-    setEditingReminder(null);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (reminder) => {
-    setEditingReminder(reminder);
-    setIsModalOpen(true);
-  };
+  const openAddModal  = () => { setEditingReminder(null); setIsModalOpen(true); };
+  const openEditModal = (r) => { setEditingReminder(r);   setIsModalOpen(true); };
 
   const handleSaveReminder = async (formData) => {
-    // Validation: Date/Time in the past
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    if (formData.date < todayStr) {
-      toast.error("Cannot set reminders to past dates!");
-      return;
-    }
+    if (formData.date < todayStr)  { toast.error('Cannot set reminders to past dates!');  return; }
     if (formData.date === todayStr && formData.time) {
-      const nowTime = format(new Date(), 'HH:mm');
-      if (formData.time < nowTime) {
-        toast.error("Cannot set reminders to a past time today!");
-        return;
-      }
+      if (formData.time < format(new Date(), 'HH:mm')) { toast.error('Cannot set reminders to a past time today!'); return; }
     }
-
-    // Validation: Title empty
-    if (!formData.title.trim()) {
-      toast.error("Title cannot be empty!");
-      return;
-    }
-
+    if (!formData.title.trim()) { toast.error('Title cannot be empty!'); return; }
     try {
-      if (editingReminder) {
-        await calendarService.updateReminder(editingReminder.id, formData);
-        toast.success("Reminder updated!");
-      } else {
-        await calendarService.createReminder(formData);
-        toast.success("Reminder created!");
-      }
-      setIsModalOpen(false);
-      fetchReminders();
-      
-      // Request notification permission if enabled
-      if (formData.notificationEnabled && Notification.permission !== 'granted') {
-        Notification.requestPermission();
-      }
-    } catch (e) {
-      toast.error("Failed to save reminder");
-    }
+      if (editingReminder) { await calendarService.updateReminder(editingReminder.id, formData); toast.success('Reminder updated! ✓'); }
+      else                 { await calendarService.createReminder(formData);                      toast.success('Reminder created! ✓'); }
+      setIsModalOpen(false); fetchReminders();
+      if (formData.notificationEnabled && Notification.permission !== 'granted') Notification.requestPermission();
+    } catch { toast.error('Failed to save reminder'); }
   };
 
   const handleDeleteReminder = async (id) => {
-    if (window.confirm("Are you sure you want to delete this reminder?")) {
-      try {
-        await calendarService.deleteReminder(id);
-        toast.success("Reminder deleted!");
-        fetchReminders();
-      } catch (e) {
-        toast.error("Failed to delete reminder");
-      }
-    }
+    if (!window.confirm('Delete this reminder?')) return;
+    try { await calendarService.deleteReminder(id); toast.success('Reminder deleted'); fetchReminders(); }
+    catch { toast.error('Failed to delete reminder'); }
   };
 
   const onDragEnd = async (result) => {
     if (!result.destination) return;
     const { source, destination, draggableId } = result;
-    
     if (source.droppableId !== destination.droppableId) {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
-      if (destination.droppableId < todayStr) {
-        toast.error("Cannot move reminders to past dates!");
-        return;
-      }
-
-      const reminderToMove = reminders.find(r => r.id.toString() === draggableId);
-      if (reminderToMove) {
-        const updatedReminder = { ...reminderToMove, date: destination.droppableId };
-        
-        // Optimistic update
-        setReminders(prev => prev.map(r => r.id === reminderToMove.id ? updatedReminder : r));
-        
-        try {
-          await calendarService.updateReminder(reminderToMove.id, updatedReminder);
-          toast.success("Reminder moved!");
-        } catch (e) {
-          toast.error("Failed to move reminder");
-          fetchReminders(); // Revert
-        }
+      if (destination.droppableId < todayStr) { toast.error('Cannot move reminders to past dates!'); return; }
+      const rem = reminders.find(r => r.id.toString() === draggableId);
+      if (rem) {
+        const updated = { ...rem, date: destination.droppableId };
+        setReminders(prev => prev.map(r => r.id === rem.id ? updated : r));
+        try { await calendarService.updateReminder(rem.id, updated); toast.success('Reminder moved!'); }
+        catch { toast.error('Failed to move reminder'); fetchReminders(); }
       }
     }
   };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text("DevVault Reminders", 14, 15);
-    
-    const tableData = reminders.map(r => [
-      r.date,
-      r.time || 'N/A',
-      r.title,
-      r.priority,
-      r.category
-    ]);
-
-    doc.autoTable({
-      head: [['Date', 'Time', 'Title', 'Priority', 'Category']],
-      body: tableData,
-      startY: 25,
-    });
-    
-    doc.save(`DevVault-Reminders-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    doc.text('DevVault Reminders', 14, 15);
+    doc.autoTable({ head: [['Date','Time','Title','Priority','Category']], body: reminders.map(r=>[r.date,r.time||'N/A',r.title,r.priority,r.category]), startY: 25 });
+    doc.save(`DevVault-Reminders-${format(new Date(),'yyyy-MM-dd')}.pdf`);
   };
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Time', 'Title', 'Description', 'Priority', 'Category'];
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n"
-      + reminders.map(r => [
-        r.date, 
-        r.time || '', 
-        `"${(r.title || '').replace(/"/g, '""')}"`, 
-        `"${(r.description || '').replace(/"/g, '""')}"`, 
-        r.priority, 
-        r.category
-      ].join(",")).join("\n");
-      
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `DevVault-Reminders-${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const printReminders = () => {
-    window.print();
+    const headers = ['Date','Time','Title','Description','Priority','Category'];
+    const csv = 'data:text/csv;charset=utf-8,' + headers.join(',') + '\n'
+      + reminders.map(r=>[r.date,r.time||'',`"${(r.title||'').replace(/"/g,'""')}"`,`"${(r.description||'').replace(/"/g,'""')}"`,r.priority,r.category].join(',')).join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csv));
+    link.setAttribute('download', `DevVault-Reminders-${format(new Date(),'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
   if (!token) return <Navigate to="/login" />;
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#11111b", color: "#cdd6f4", fontFamily: "'Inter', -apple-system, sans-serif" }}>
-      <Toaster position="bottom-right" />
-      
-      {/* Navbar */}
-      <nav style={{ background: "rgba(17,17,27,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid #313244", padding: "0 2rem", height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-            <div style={{ width: 34, height: 34, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>💻</div>
-            <span style={{ fontSize: "1.3rem", fontWeight: 800, background: "linear-gradient(135deg,#cba6f7,#89b4fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>DevVault</span>
-          </div>
-          <Link to="/dashboard" style={{ color: "#a6adc8", textDecoration: "none", fontSize: "0.9rem", fontWeight: 600 }}>← Back to Dashboard</Link>
-        </div>
+    <div className="dv-page">
+      <Sidebar />
+      <Toaster position="bottom-right" toastOptions={{ style: { fontFamily: "'Plus Jakarta Sans', sans-serif", background: 'var(--cream)', color: 'var(--stone-900)', border: '1px solid var(--stone-200)', borderRadius: 14, boxShadow: '0 8px 24px rgba(74,69,64,0.12)' } }} />
 
-        <div className="flex gap-3">
-          <button onClick={exportToPDF} className="text-gray-400 hover:text-white flex items-center gap-2 text-sm bg-[#1e1e2e] px-3 py-1.5 rounded-lg border border-gray-800"><Download size={16} /> PDF</button>
-          <button onClick={exportToCSV} className="text-gray-400 hover:text-white flex items-center gap-2 text-sm bg-[#1e1e2e] px-3 py-1.5 rounded-lg border border-gray-800"><Download size={16} /> CSV</button>
-          <button onClick={printReminders} className="text-gray-400 hover:text-white flex items-center gap-2 text-sm bg-[#1e1e2e] px-3 py-1.5 rounded-lg border border-gray-800"><Printer size={16} /> Print</button>
-        </div>
-      </nav>
+      <main className="dv-main" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Main Content */}
-      <div className="flex-1 flex p-6 gap-6 h-[calc(100vh-60px)] overflow-hidden">
-        
-        {/* Calendar Section */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-100">{format(currentDate, 'MMMM yyyy')}</h1>
-            <div className="flex gap-2 bg-[#1e1e2e] rounded-lg p-1 border border-gray-800">
-              <button onClick={handlePrevMonth} className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"><ChevronLeft size={20} /></button>
-              <button onClick={() => setCurrentDate(new Date())} className="px-4 text-sm font-semibold text-gray-300 hover:text-white">Today</button>
-              <button onClick={handleNextMonth} className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"><ChevronRight size={20} /></button>
+        {/* ── Top bar ── */}
+        <div style={{
+          height: 60, background: 'var(--cream)',
+          borderBottom: '1px solid var(--stone-200)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 1.75rem',
+          flexShrink: 0,
+          position: 'sticky', top: 0, zIndex: 50,
+        }}>
+          {/* Month nav */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--stone-900)', letterSpacing: '-0.02em' }}>
+              {format(currentDate, 'MMMM yyyy')}
+            </h1>
+            <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 11, padding: 3, gap: 2, border: '1px solid var(--stone-200)' }}>
+              <button onClick={handlePrevMonth} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--stone-500)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                onMouseEnter={e=>e.currentTarget.style.background='var(--stone-200)'}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+              ><ChevronLeft size={16} /></button>
+              <button onClick={() => setCurrentDate(new Date())} style={{ padding: '0 12px', borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--stone-700)', fontFamily: 'inherit', fontWeight: 700, fontSize: '0.8125rem', cursor: 'pointer', transition: 'all 0.15s' }}
+                onMouseEnter={e=>e.currentTarget.style.background='var(--stone-200)'}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+              >Today</button>
+              <button onClick={handleNextMonth} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'transparent', color: 'var(--stone-500)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                onMouseEnter={e=>e.currentTarget.style.background='var(--stone-200)'}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+              ><ChevronRight size={16} /></button>
             </div>
           </div>
-          
+
+          {/* Export buttons */}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {[
+              { label: 'PDF', icon: <Download size={13} />, action: exportToPDF },
+              { label: 'CSV', icon: <Download size={13} />, action: exportToCSV },
+              { label: 'Print', icon: <Printer size={13} />, action: () => window.print() },
+            ].map(({ label, icon, action }) => (
+              <button key={label} onClick={action} className="dv-btn dv-btn-ghost" style={{ padding: '7px 14px', borderRadius: 10, fontSize: '0.8rem', gap: 5 }}>
+                {icon} {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Calendar body ── */}
+        <div style={{ flex: 1, display: 'flex', padding: '1.25rem 1.75rem', gap: '1.25rem', overflow: 'hidden', minHeight: 0 }}>
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex flex-1 gap-6 min-h-0">
-              <CalendarGrid 
-                currentDate={currentDate} 
-                selectedDate={selectedDate} 
-                onDateClick={handleDateClick} 
-                reminders={reminders}
-              />
-              <ReminderList 
-                selectedDate={selectedDate} 
-                reminders={reminders} 
-                onAdd={openAddModal} 
-                onEdit={openEditModal} 
-                onDelete={handleDeleteReminder} 
-              />
-            </div>
+            <CalendarGrid
+              currentDate={currentDate}
+              selectedDate={selectedDate}
+              onDateClick={handleDateClick}
+              reminders={reminders}
+            />
+            <ReminderList
+              selectedDate={selectedDate}
+              reminders={reminders}
+              onAdd={openAddModal}
+              onEdit={openEditModal}
+              onDelete={handleDeleteReminder}
+            />
           </DragDropContext>
         </div>
-      </div>
+      </main>
 
-      <ReminderModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <ReminderModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         onSave={handleSaveReminder}
         selectedDate={selectedDate}
         existingReminder={editingReminder}

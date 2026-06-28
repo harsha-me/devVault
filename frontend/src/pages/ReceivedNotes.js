@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { Navigate, Link, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import { X, Zap, Mail } from "lucide-react";
+import Sidebar from "../components/Sidebar";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
@@ -15,7 +17,6 @@ const extractCode = (content) => {
   return match ? match[1] : null;
 };
 
-/* ─── Reusable Markdown Renderer ─────────────────────────────────── */
 function MarkdownRenderer({ content }) {
   return (
     <ReactMarkdown
@@ -25,30 +26,26 @@ function MarkdownRenderer({ content }) {
         code({ inline, className, children, ...props }) {
           const match = /language-(\w+)/.exec(className || "");
           return !inline && match ? (
-            <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div" {...props}>
+            <SyntaxHighlighter style={oneLight} language={match[1]} PreTag="div" {...props}>
               {String(children).replace(/\n$/, "")}
             </SyntaxHighlighter>
           ) : (
-            <code style={{ background: "#313244", padding: "2px 6px", borderRadius: "4px", fontSize: "0.88em", color: "#f38ba8" }} {...props}>
-              {children}
-            </code>
+            <code style={{ background: 'var(--stone-100)', padding: '2px 7px', borderRadius: 6, fontSize: '0.85em', color: 'var(--accent)', fontFamily: 'monospace' }} {...props}>{children}</code>
           );
         },
-        h1: ({ children }) => <h1 style={{ color: "#cdd6f4", fontSize: "1.6rem", fontWeight: "800", borderBottom: "1px solid #45475a", paddingBottom: "0.4em", marginBottom: "0.8em" }}>{children}</h1>,
-        h2: ({ children }) => <h2 style={{ color: "#cba6f7", fontSize: "1.3rem", fontWeight: "700", marginBottom: "0.6em" }}>{children}</h2>,
-        h3: ({ children }) => <h3 style={{ color: "#89dceb", fontSize: "1.1rem", fontWeight: "700", marginBottom: "0.5em" }}>{children}</h3>,
-        p:  ({ children }) => <p  style={{ color: "#cdd6f4", lineHeight: "1.75", marginBottom: "0.8em" }}>{children}</p>,
-        a:  ({ href, children }) => <a href={href} style={{ color: "#89b4fa", textDecoration: "underline" }} target="_blank" rel="noopener noreferrer">{children}</a>,
-        ul: ({ children }) => <ul style={{ color: "#cdd6f4", paddingLeft: "1.5em", marginBottom: "0.8em" }}>{children}</ul>,
-        ol: ({ children }) => <ol style={{ color: "#cdd6f4", paddingLeft: "1.5em", marginBottom: "0.8em" }}>{children}</ol>,
-        li: ({ children }) => <li style={{ marginBottom: "0.3em" }}>{children}</li>,
-        blockquote: ({ children }) => <blockquote style={{ borderLeft: "3px solid #cba6f7", paddingLeft: "1em", color: "#a6adc8", fontStyle: "italic", margin: "0.8em 0" }}>{children}</blockquote>,
-        hr: () => <hr style={{ border: "none", borderTop: "1px solid #45475a", margin: "1.2em 0" }} />,
-        strong: ({ children }) => <strong style={{ color: "#cdd6f4", fontWeight: "700" }}>{children}</strong>,
-        em: ({ children }) => <em style={{ color: "#a6adc8" }}>{children}</em>,
-        table: ({ children }) => <div style={{ overflowX: "auto", marginBottom: "1em" }}><table style={{ borderCollapse: "collapse", width: "100%" }}>{children}</table></div>,
-        th: ({ children }) => <th style={{ border: "1px solid #45475a", padding: "8px 14px", background: "#313244", color: "#cba6f7", textAlign: "left" }}>{children}</th>,
-        td: ({ children }) => <td style={{ border: "1px solid #45475a", padding: "8px 14px", color: "#cdd6f4" }}>{children}</td>,
+        h1: ({ children }) => <h1 style={{ color: 'var(--stone-900)', fontSize: '1.5rem', fontWeight: 800, borderBottom: '1px solid var(--stone-200)', paddingBottom: '0.4em', marginBottom: '0.8em' }}>{children}</h1>,
+        h2: ({ children }) => <h2 style={{ color: 'var(--accent)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.6em' }}>{children}</h2>,
+        h3: ({ children }) => <h3 style={{ color: 'var(--accent-sage)', fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5em' }}>{children}</h3>,
+        p:  ({ children }) => <p  style={{ color: 'var(--stone-700)', lineHeight: 1.75, marginBottom: '0.8em' }}>{children}</p>,
+        a:  ({ href, children }) => <a href={href} style={{ color: 'var(--accent)', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer">{children}</a>,
+        ul: ({ children }) => <ul style={{ color: 'var(--stone-700)', paddingLeft: '1.5em', marginBottom: '0.8em' }}>{children}</ul>,
+        ol: ({ children }) => <ol style={{ color: 'var(--stone-700)', paddingLeft: '1.5em', marginBottom: '0.8em' }}>{children}</ol>,
+        li: ({ children }) => <li style={{ marginBottom: '0.3em' }}>{children}</li>,
+        blockquote: ({ children }) => <blockquote style={{ borderLeft: '3px solid var(--stone-300)', paddingLeft: '1em', color: 'var(--stone-500)', fontStyle: 'italic', margin: '0.8em 0' }}>{children}</blockquote>,
+        strong: ({ children }) => <strong style={{ color: 'var(--stone-900)', fontWeight: 700 }}>{children}</strong>,
+        table: ({ children }) => <div style={{ overflowX: 'auto' }}><table style={{ borderCollapse: 'collapse', width: '100%', marginBottom: '0.8em' }}>{children}</table></div>,
+        th: ({ children }) => <th style={{ border: '1px solid var(--stone-200)', padding: '8px 14px', background: 'var(--stone-100)', color: 'var(--stone-700)', textAlign: 'left' }}>{children}</th>,
+        td: ({ children }) => <td style={{ border: '1px solid var(--stone-200)', padding: '8px 14px', color: 'var(--stone-700)' }}>{children}</td>,
       }}
     >
       {content}
@@ -56,20 +53,35 @@ function MarkdownRenderer({ content }) {
   );
 }
 
+/* ── Sender avatar initials ─────────────────────────────────── */
+function Avatar({ email, size = 36 }) {
+  const initials = (email || "?").substring(0, 2).toUpperCase();
+  const hue = (email || "").charCodeAt(0) * 37 % 360;
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: `hsl(${hue},45%,88%)`,
+      color: `hsl(${hue},40%,40%)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.35, fontWeight: 700, flexShrink: 0,
+    }}>
+      {initials}
+    </div>
+  );
+}
+
+/* ── ReceivedNotes Page ─────────────────────────────────────── */
 function ReceivedNotes() {
-  const token = localStorage.getItem("token");
-  const email = localStorage.getItem("email");
+  const token    = localStorage.getItem("token");
+  const email    = localStorage.getItem("email");
   const navigate = useNavigate();
 
   const [receivedNotes, setReceivedNotes] = useState([]);
-  const [selectedNote, setSelectedNote] = useState(null);
+  const [selectedNote,  setSelectedNote]  = useState(null);
 
   const markAsRead = useCallback(async () => {
-    try {
-      await axios.put(`${API_BASE}/markAsRead/${email}`);
-    } catch (error) {
-      console.log(error);
-    }
+    try { await axios.put(`${API_BASE}/markAsRead/${email}`); }
+    catch (error) { console.log(error); }
   }, [email]);
 
   const fetchReceivedNotes = useCallback(async () => {
@@ -77,103 +89,114 @@ function ReceivedNotes() {
       const response = await axios.get(`${API_BASE}/receivedNotes/${email}`);
       setReceivedNotes(response.data);
       await markAsRead();
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) { console.log(error); }
   }, [email, markAsRead]);
 
-  useEffect(() => {
-    fetchReceivedNotes();
-  }, [fetchReceivedNotes]);
+  useEffect(() => { fetchReceivedNotes(); }, [fetchReceivedNotes]);
 
-  if (!token) {
-    return <Navigate to="/login" />;
-  }
+  if (!token) return <Navigate to="/login" />;
 
   return (
-    <div className="min-h-screen bg-black text-white p-10 font-sans">
-      <div className="flex items-center justify-between mb-10">
-        <h1 className="text-4xl font-bold">Received Developer Notes 📩</h1>
-        <Link
-          to="/dashboard"
-          className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition duration-300 font-semibold"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
+    <div className="dv-page">
+      <Sidebar />
+      <main className="dv-main">
+        <div className="dv-content dv-fade-up">
 
-      {receivedNotes.length === 0 && (
-        <p className="text-gray-500 text-center text-lg mt-20">
-          No received notes yet. Ask a teammate to share a note with you! 📩
-        </p>
-      )}
+          {/* Header */}
+          <div style={{ marginBottom: '2rem' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--stone-900)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>Inbox</h1>
+            <p style={{ color: 'var(--stone-400)', fontSize: '0.875rem' }}>
+              {receivedNotes.length} message{receivedNotes.length !== 1 ? 's' : ''} received
+            </p>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {receivedNotes.map((note) => {
-          // Clean up markdown syntax for preview
-          const preview = note.content.replace(/```[\s\S]*?```/g, "[code snippet]").replace(/[#*`>_~[\]]/g, "").trim();
-          
-          return (
-            <div
-              key={note.id}
-              onClick={() => setSelectedNote(note)}
-              className="bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-800 hover:border-blue-500 transition-all duration-200 cursor-pointer hover:-translate-y-1"
-            >
-              <p className="text-xs text-blue-400 mb-2 font-bold uppercase tracking-wider">
-                From: {note.senderEmail}
-              </p>
-              <h2 className="text-xl font-bold mb-3 truncate">{note.title}</h2>
-              <p className="text-gray-400 text-sm line-clamp-3">
-                {preview || "No preview available"}
-              </p>
-              <div className="mt-4 text-blue-400 text-sm font-semibold">
-                Click to open →
+          {/* Empty state */}
+          {receivedNotes.length === 0 ? (
+            <div className="dv-card" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.6 }}>
+                <Mail size={52} style={{ color: 'var(--stone-300)', display: 'block', margin: '0 auto 0.5rem' }} />
               </div>
+              <p style={{ color: 'var(--stone-500)', fontSize: '1rem', fontWeight: 600 }}>Your inbox is quiet today 🌿</p>
+              <p style={{ color: 'var(--stone-300)', fontSize: '0.8125rem', marginTop: '0.375rem' }}>
+                Ask a teammate to share a note with you — it'll appear here.
+              </p>
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            <div className="dv-stagger" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {receivedNotes.map(note => {
+                // eslint-disable-next-line no-useless-escape
+                const preview = note.content.replace(/```[\s\S]*?```/g, "[code snippet]").replace(/[#*`>_~\[\]]/g, "").trim();
+                return (
+                  <div
+                    key={note.id}
+                    onClick={() => setSelectedNote(note)}
+                    className="dv-card dv-card-hover dv-fade-up"
+                    style={{
+                      padding: '1.125rem 1.375rem', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '1rem',
+                    }}
+                  >
+                    <Avatar email={note.senderEmail} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.01em' }}>
+                          {note.senderEmail}
+                        </span>
+                        {extractCode(note.content) && (
+                          <span style={{ fontSize: '0.7rem', fontWeight: 700, background: 'var(--success-light)', color: 'var(--success)', padding: '2px 8px', borderRadius: 6, border: '1px solid var(--accent-sage-lt)', flexShrink: 0, marginLeft: 8 }}>
+                            code
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--stone-900)', marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {note.title}
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--stone-400)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {preview || "No preview available"}
+                      </div>
+                    </div>
+                    <div style={{ color: 'var(--stone-300)', fontSize: '0.75rem', flexShrink: 0 }}>Open →</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
 
-      {/* ── Modal Overlay ── */}
+      {/* ── Note Modal ── */}
       {selectedNote && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-          style={{ background: "rgba(0, 0, 0, 0.7)", backdropFilter: "blur(4px)" }}
-          onClick={() => setSelectedNote(null)}
-        >
-          <div 
-            className="bg-[#1e1e2e] rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-[#313244]"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-[#313244] flex justify-between items-center bg-[#181825]">
-              <div>
-                <h2 className="text-2xl font-bold text-[#cdd6f4]">{selectedNote.title}</h2>
-                <p className="text-sm text-[#89b4fa] mt-1 font-semibold">From: {selectedNote.senderEmail}</p>
+        <div className="dv-overlay" onClick={() => setSelectedNote(null)}>
+          <div className="dv-modal" style={{ width: '100%', maxWidth: 720, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            {/* Modal header */}
+            <div style={{ padding: '1.375rem 1.75rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'var(--stone-50)', borderRadius: '24px 24px 0 0' }}>
+              <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
+                <Avatar email={selectedNote.senderEmail} size={42} />
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--stone-900)', marginBottom: '0.2rem' }}>{selectedNote.title}</h2>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 600 }}>From: {selectedNote.senderEmail}</p>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                 {extractCode(selectedNote.content) && (
                   <button
-                    onClick={() => {
-                      const code = extractCode(selectedNote.content);
-                      navigate("/compiler", { state: { code } });
-                    }}
-                    className="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg font-bold text-sm transition duration-200 flex items-center gap-1"
+                    onClick={() => navigate('/compiler', { state: { code: extractCode(selectedNote.content) } })}
+                    className="dv-btn dv-btn-sage"
+                    style={{ padding: '8px 16px', borderRadius: 11, fontSize: '0.8125rem', gap: 6 }}
                   >
-                    Run Code ⚡
+                    <Zap size={13} fill="currentColor" /> Run Code
                   </button>
                 )}
-                <button 
-                  onClick={() => setSelectedNote(null)}
-                  className="text-[#a6adc8] hover:text-[#f38ba8] transition-colors p-2 text-2xl leading-none"
+                <button onClick={() => setSelectedNote(null)} style={{ background: 'var(--stone-100)', border: '1px solid var(--stone-200)', borderRadius: 10, padding: '8px', cursor: 'pointer', color: 'var(--stone-500)', display: 'flex', alignItems: 'center', transition: 'all 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--danger-light)'; e.currentTarget.style.color = 'var(--danger)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--stone-100)'; e.currentTarget.style.color = 'var(--stone-500)'; }}
                 >
-                  &times;
+                  <X size={18} />
                 </button>
               </div>
             </div>
-            
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1">
+            {/* Modal body */}
+            <div style={{ padding: '1.75rem', overflowY: 'auto', flex: 1 }}>
               <MarkdownRenderer content={selectedNote.content} />
             </div>
           </div>
