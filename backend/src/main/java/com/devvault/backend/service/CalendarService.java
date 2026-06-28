@@ -62,4 +62,8 @@ public class CalendarService {
             throw new RuntimeException("Reminder not found or unauthorized");
         }
     }
+
+    public void deleteReminderById(Long id) {
+        calendarRepository.deleteById(id);
+    }
 }
