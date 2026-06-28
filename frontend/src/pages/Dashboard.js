@@ -6,6 +6,8 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import { Calendar as CalendarIcon, Clock, AlertCircle } from "lucide-react";
+import * as calendarService from "../services/calendarService";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
@@ -92,6 +94,7 @@ function Dashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [mode, setMode]             = useState("split"); // "write" | "split" | "preview"
   const [saving, setSaving]         = useState(false);
+  const [dashboardReminders, setDashboardReminders] = useState({ today: [], upcoming: [], overdue: [] });
 
   const fetchNotes = useCallback(async () => {
     try {
@@ -100,6 +103,13 @@ function Dashboard() {
     } catch (e) { console.log(e); }
   }, [email]);
 
+  const fetchReminders = useCallback(async () => {
+    try {
+      const data = await calendarService.getDashboardReminders();
+      setDashboardReminders(data);
+    } catch (e) { console.log("Error fetching reminders", e); }
+  }, []);
+
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/unreadCount/${email}`);
@@ -107,13 +117,15 @@ function Dashboard() {
     } catch (e) { console.log(e); }
   }, [email]);
 
-  useEffect(() => { fetchNotes(); }, [fetchNotes]);
-
   useEffect(() => {
-    fetchUnreadCount();
+    if (token && email) {
+      fetchNotes();
+      fetchUnreadCount();
+      fetchReminders();
+    }
     const iv = setInterval(fetchUnreadCount, 5000);
     return () => clearInterval(iv);
-  }, [fetchUnreadCount]);
+  }, [token, email, fetchNotes, fetchUnreadCount, fetchReminders]);
 
   if (!token) return <Navigate to="/login" />;
 
@@ -205,6 +217,10 @@ function Dashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
           <span style={{ fontSize: "0.8rem", color: "#585b70", background: "#1e1e2e", padding: "5px 12px", borderRadius: 20, border: "1px solid #313244" }}>{email}</span>
 
+          <Link to="/calendar" style={{ background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", padding: "7px 14px", borderRadius: 9, textDecoration: "none", fontSize: "0.83rem", fontWeight: 600 }}>
+            Calendar
+          </Link>
+
           <Link to="/compiler" style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", padding: "7px 14px", borderRadius: 9, textDecoration: "none", fontSize: "0.83rem", fontWeight: 600 }}>
             Compiler
           </Link>
@@ -230,12 +246,40 @@ function Dashboard() {
 
       <div style={{ padding: "2rem 2.5rem", maxWidth: 1400, margin: "0 auto" }}>
 
-        {/* ── Welcome ── */}
-        <div style={{ marginBottom: "1.75rem" }}>
-          <h1 style={{ fontSize: "2.2rem", fontWeight: 800, marginBottom: "0.3rem" }}>Welcome back 👋</h1>
-          <p style={{ color: "#585b70", fontSize: "0.9rem" }}>
-            {notes.length} note{notes.length !== 1 ? "s" : ""} in your vault
-          </p>
+        {/* ── Welcome & Reminders ── */}
+        <div style={{ marginBottom: "1.75rem", display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: "2.2rem", fontWeight: 800, marginBottom: "0.3rem" }}>Welcome back 👋</h1>
+            <p style={{ color: "#585b70", fontSize: "0.9rem" }}>
+              {notes.length} note{notes.length !== 1 ? "s" : ""} in your vault
+            </p>
+          </div>
+          
+          <div style={{ flex: 2, display: "flex", gap: "1rem" }}>
+            <div style={{ flex: 1, background: "#1e1e2e", padding: "1rem", borderRadius: "12px", border: "1px solid #313244", display: "flex", alignItems: "center", gap: "1rem" }}>
+              <div style={{ background: "rgba(166, 227, 161, 0.2)", color: "#a6e3a1", padding: "0.75rem", borderRadius: "10px" }}><CalendarIcon size={24} /></div>
+              <div>
+                <div style={{ color: "#a6adc8", fontSize: "0.8rem", fontWeight: 600, textTransform: "uppercase" }}>Today</div>
+                <div style={{ color: "#cdd6f4", fontSize: "1.2rem", fontWeight: 700 }}>{dashboardReminders.today.length} Reminders</div>
+              </div>
+            </div>
+            
+            <div style={{ flex: 1, background: "#1e1e2e", padding: "1rem", borderRadius: "12px", border: "1px solid #313244", display: "flex", alignItems: "center", gap: "1rem" }}>
+              <div style={{ background: "rgba(137, 180, 250, 0.2)", color: "#89b4fa", padding: "0.75rem", borderRadius: "10px" }}><Clock size={24} /></div>
+              <div>
+                <div style={{ color: "#a6adc8", fontSize: "0.8rem", fontWeight: 600, textTransform: "uppercase" }}>Upcoming</div>
+                <div style={{ color: "#cdd6f4", fontSize: "1.2rem", fontWeight: 700 }}>{dashboardReminders.upcoming.length} Reminders</div>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, background: "#1e1e2e", padding: "1rem", borderRadius: "12px", border: "1px solid #313244", display: "flex", alignItems: "center", gap: "1rem" }}>
+              <div style={{ background: "rgba(243, 139, 168, 0.2)", color: "#f38ba8", padding: "0.75rem", borderRadius: "10px" }}><AlertCircle size={24} /></div>
+              <div>
+                <div style={{ color: "#a6adc8", fontSize: "0.8rem", fontWeight: 600, textTransform: "uppercase" }}>Overdue</div>
+                <div style={{ color: "#cdd6f4", fontSize: "1.2rem", fontWeight: 700 }}>{dashboardReminders.overdue.length} Reminders</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Editor Card ── */}

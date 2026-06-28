@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import PreviousNotes from "./pages/PreviousNotes";
 import ReceivedNotes from "./pages/ReceivedNotes";
 import Compiler from "./pages/Compiler";
+import Calendar from "./pages/Calendar";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/previous-notes" element={<PreviousNotes />} />
         <Route path="/received-notes" element={<ReceivedNotes />} />
         <Route path="/compiler" element={<Compiler />} />
+        <Route path="/calendar" element={<Calendar />} />
       </Routes>
     </BrowserRouter>
   );
