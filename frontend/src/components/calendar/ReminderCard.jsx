@@ -31,7 +31,7 @@ const ReminderCard = ({ reminder, index, onEdit, onDelete }) => {
             transform: snapshot.isDragging
               ? (provided.draggableProps.style?.transform || '') + ' scale(1.02)'
               : provided.draggableProps.style?.transform,
-            transition: snapshot.isDragging ? 'box-shadow 0.2s, border-color 0.2s' : 'all 0.18s ease',
+            transition: 'box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease',
             cursor: 'grab',
             position: 'relative',
           }}

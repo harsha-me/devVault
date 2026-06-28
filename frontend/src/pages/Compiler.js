@@ -20,6 +20,27 @@ const THEMES = [
   { value: 'hc-black',   label: '⬛ High Contrast' },
 ];
 
+/* ── Generic modal (defined outside to prevent unmounting and focus loss on keystrokes) ── */
+const Modal = ({ title, onClose, onConfirm, confirmLabel, confirmLoading, children }) => (
+  <div className="dv-overlay" onClick={onClose}>
+    <div className="dv-modal" style={{ width: 400, padding: 0 }} onClick={e => e.stopPropagation()}>
+      <div style={{ padding: '1.375rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--stone-900)' }}>{title}</h3>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--stone-400)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+      </div>
+      <div style={{ padding: '1.375rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+        {children}
+      </div>
+      <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
+        <button onClick={onClose} className="dv-btn dv-btn-ghost" style={{ padding: '9px 18px', borderRadius: 11 }}>Cancel</button>
+        <button onClick={onConfirm} disabled={confirmLoading} className="dv-btn dv-btn-primary" style={{ padding: '9px 20px', borderRadius: 11 }}>
+          {confirmLoading ? 'Working…' : confirmLabel}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 function Compiler() {
   const token    = localStorage.getItem("token");
   const email    = localStorage.getItem("email");
@@ -40,6 +61,13 @@ function Compiler() {
     () => localStorage.getItem('dv_editor_theme') || 'vs-dark'
   );
 
+  const codeRef = React.useRef(code);
+  const isRunningRef = React.useRef(isRunning);
+
+  // Sync refs
+  useEffect(() => { codeRef.current = code; }, [code]);
+  useEffect(() => { isRunningRef.current = isRunning; }, [isRunning]);
+
   const changeTheme = (theme) => {
     setEditorTheme(theme);
     localStorage.setItem('dv_editor_theme', theme);
@@ -58,20 +86,22 @@ function Compiler() {
     const handleKey = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
-        if (!isRunning) handleRun();
+        if (!isRunningRef.current) {
+          handleRun();
+        }
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRunning, code]);
+  }, []);
 
   if (!token) return <Navigate to="/login" />;
 
   const handleRun = async () => {
     setIsRunning(true); setOutput("Running…");
     try {
-      const res = await axios.post(`${API_BASE}/compile`, { code, language: "java" });
+      const res = await axios.post(`${API_BASE}/compile`, { code: codeRef.current, language: "java" });
       if (res.data.success) setOutput(res.data.output);
       else setOutput((res.data.error || "") + "\n" + (res.data.output || ""));
     } catch (e) {
@@ -83,7 +113,7 @@ function Compiler() {
     if (!noteTitle?.trim()) return;
     setIsSaving(true);
     try {
-      await axios.post(`${API_BASE}/addNote`, { email, title: noteTitle.trim(), content: `\`\`\`java\n${code}\n\`\`\`` });
+      await axios.post(`${API_BASE}/addNote`, { email, title: noteTitle.trim(), content: `\`\`\`java\n${codeRef.current}\n\`\`\`` });
       setSaveModalOpen(false); setNoteTitle("");
     } catch (e) { console.error(e); alert("Failed to save code."); }
     finally { setIsSaving(false); }
@@ -93,34 +123,13 @@ function Compiler() {
     if (!receiverEmail?.trim() || !noteTitle?.trim()) return;
     setIsSharing(true);
     try {
-      await axios.post(`${API_BASE}/shareNote`, { senderEmail: email, receiverEmail: receiverEmail.trim(), title: noteTitle.trim(), content: `\`\`\`java\n${code}\n\`\`\`` });
+      await axios.post(`${API_BASE}/shareNote`, { senderEmail: email, receiverEmail: receiverEmail.trim(), title: noteTitle.trim(), content: `\`\`\`java\n${codeRef.current}\n\`\`\`` });
       setShareModalOpen(false); setNoteTitle(""); setReceiverEmail("");
     } catch (e) { console.error(e); alert("Failed to share code."); }
     finally { setIsSharing(false); }
   };
 
   const isError = output.includes("Error") || output.includes("Exception") || output.includes("error:");
-
-  /* ── Generic modal ── */
-  const Modal = ({ title, onClose, onConfirm, confirmLabel, confirmLoading, children }) => (
-    <div className="dv-overlay" onClick={onClose}>
-      <div className="dv-modal" style={{ width: 400, padding: 0 }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '1.375rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--stone-900)' }}>{title}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--stone-400)', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
-        </div>
-        <div style={{ padding: '1.375rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-          {children}
-        </div>
-        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} className="dv-btn dv-btn-ghost" style={{ padding: '9px 18px', borderRadius: 11 }}>Cancel</button>
-          <button onClick={onConfirm} disabled={confirmLoading} className="dv-btn dv-btn-primary" style={{ padding: '9px 20px', borderRadius: 11 }}>
-            {confirmLoading ? 'Working…' : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="dv-page" style={{ flexDirection: 'column' }}>
