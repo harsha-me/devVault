@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, endOfWeek, isSameMonth, isSameDay, parseISO } from 'date-fns';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, endOfWeek, isSameMonth, isSameDay } from 'date-fns';
 import { Droppable } from '@hello-pangea/dnd';
 
 const CalendarGrid = ({ currentDate, selectedDate, onDateClick, reminders }) => {
@@ -12,33 +12,32 @@ const CalendarGrid = ({ currentDate, selectedDate, onDateClick, reminders }) => 
   const rows = [];
   let days = [];
   let day = startDate;
-  let formattedDate = "";
 
   while (day <= endDate) {
     for (let i = 0; i < 7; i++) {
-      formattedDate = format(day, dateFormat);
       const cloneDay = day;
+      const currentFormattedDate = format(cloneDay, dateFormat);
       
       const dayReminders = reminders.filter(r => r.date === format(cloneDay, 'yyyy-MM-dd'));
 
       days.push(
-        <Droppable droppableId={format(cloneDay, 'yyyy-MM-dd')} key={day.toString()}>
+        <Droppable droppableId={format(cloneDay, 'yyyy-MM-dd')} key={cloneDay.toString()}>
           {(provided, snapshot) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
               className={`min-h-[100px] p-2 border-r border-b border-gray-800 cursor-pointer transition-colors ${
-                !isSameMonth(day, monthStart)
+                !isSameMonth(cloneDay, monthStart)
                   ? "bg-gray-900/50 text-gray-600"
-                  : isSameDay(day, selectedDate)
+                  : isSameDay(cloneDay, selectedDate)
                   ? "bg-blue-900/30 text-white"
                   : "bg-[#181825] text-gray-300 hover:bg-gray-800"
               } ${snapshot.isDraggingOver ? 'bg-gray-700/50' : ''}`}
               onClick={() => onDateClick(cloneDay)}
             >
               <div className="flex justify-between items-start">
-                <span className={`font-semibold text-sm ${isSameDay(day, new Date()) ? 'bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center' : ''}`}>
-                  {formattedDate}
+                <span className={`font-semibold text-sm ${isSameDay(cloneDay, new Date()) ? 'bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center' : ''}`}>
+                  {currentFormattedDate}
                 </span>
                 {dayReminders.length > 0 && (
                   <span className="text-xs bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full">
