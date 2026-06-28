@@ -22,6 +22,8 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
+    private java.time.LocalDate memberSince = java.time.LocalDate.now();
+
     public User() {
 
     }
@@ -56,5 +58,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public java.time.LocalDate getMemberSince() {
+        return memberSince;
+    }
+
+    public void setMemberSince(java.time.LocalDate memberSince) {
+        this.memberSince = memberSince;
     }
 }

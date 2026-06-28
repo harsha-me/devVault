@@ -70,4 +70,41 @@ public class UserController {
             throw e;
         }
     }
+
+    @PutMapping("/updateProfile/{email}")
+    public ResponseEntity<?> updateProfile(@PathVariable String email, @RequestBody java.util.Map<String, String> body) {
+        logger.info("Update profile request for email: {}", email);
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+        String newName = body.get("name");
+        if (newName == null || newName.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Name cannot be empty");
+        }
+        user.setName(newName.trim());
+        userRepository.save(user);
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/changePassword/{email}")
+    public ResponseEntity<?> changePassword(@PathVariable String email, @RequestBody java.util.Map<String, String> body) {
+        logger.info("Change password request for email: {}", email);
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+        String oldPassword = body.get("oldPassword");
+        String newPassword = body.get("newPassword");
+        if (oldPassword == null || newPassword == null || newPassword.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Password fields cannot be empty");
+        }
+        if (passwordEncoder.matches(oldPassword, user.getPassword())) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            return ResponseEntity.ok(java.util.Map.of("message", "Password updated successfully"));
+        } else {
+            return ResponseEntity.badRequest().body("Incorrect old password");
+        }
+    }
 }

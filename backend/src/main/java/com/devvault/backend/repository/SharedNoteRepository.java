@@ -13,6 +13,7 @@ public interface SharedNoteRepository extends JpaRepository<SharedNote, Long> {
 
     List<SharedNote> findByReceiverEmail(String receiverEmail);
     long countByReceiverEmailAndIsReadFalse(String receiverEmail);
+    long countBySenderEmail(String senderEmail);
     @Transactional
     @Modifying
     @Query("UPDATE SharedNote s SET s.isRead = true WHERE s.receiverEmail = :email")

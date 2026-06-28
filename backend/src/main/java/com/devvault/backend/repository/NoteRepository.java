@@ -11,4 +11,6 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     List<Note> findByEmailOrderByPinnedDescIdDesc(String email);
 
+    long countByEmail(String email);
+
 }
