@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Index;
 import jakarta.persistence.Column;
+import jakarta.persistence.Lob;
 
 @Entity
 @Table(name = "shared_note", indexes = {
@@ -27,6 +28,8 @@ public class SharedNote {
 
     private String title;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
     private boolean isRead = false;
 

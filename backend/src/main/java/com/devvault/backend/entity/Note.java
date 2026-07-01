@@ -11,6 +11,7 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Lob;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -29,6 +30,8 @@ public class Note {
 
     private String title;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
 
     private boolean pinned = false;
