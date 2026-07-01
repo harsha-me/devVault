@@ -39,6 +39,7 @@ const getTagColors = (tag) => {
 
 const highlightText = (text, search) => {
   if (!search?.trim()) return text;
+  // eslint-disable-next-line no-useless-escape
   const parts = text.split(new RegExp(`(${search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
   return (
     <span>
