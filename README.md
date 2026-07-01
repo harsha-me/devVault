@@ -116,3 +116,30 @@ DevVault/
 * **Frontend:** Hosted on **Vercel** (`dev-vault-theta.vercel.app`)
 * **Backend:** Hosted on **Render** (`devvault-1-aeaj.onrender.com`)
 * **Database:** Hosted on **Aiven Cloud MySQL**
+
+---
+
+## 🗺️ Future Roadmap (Upcoming Features)
+
+We are constantly working to expand the capabilities of DevVault. Here are 5 major features planned for the future:
+
+### 1. 🤖 AI Code Companion & Explainer
+* Integrated AI assistant powered by Gemini API to explain complex code blocks, suggest optimizations, and find bugs in stored notes.
+* Natural language code generation directly into the note editor.
+
+### 2. ⚡ Live Multiplayer Code Collaboration (WebSockets)
+* Real-time document and code editing with live cursor tracking, allowing multiple developers to collaborate on the same note or compile code simultaneously.
+* High-speed WebSockets integration for instantaneous updates.
+
+### 3. ⏱️ Note Version Control & History
+* Commit-history style tracking for snippets and notes.
+* View changes over time, trace diffs, and rollback notes to earlier versions.
+
+### 4. 📴 Offline-First Mode with Background Sync
+* Save, edit, and run code offline using IndexedDB local storage.
+* Auto-syncing background workers that update your cloud database (Aiven) as soon as internet connection is restored.
+
+### 5. 🌐 API Sandbox & Endpoint Tester
+* Built-in HTTP client (similar to Postman) to construct, test, and run API requests directly from the app.
+* Seamlessly store API request configurations and JSON payloads as executable documentation.
+
