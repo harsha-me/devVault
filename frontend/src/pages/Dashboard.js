@@ -24,6 +24,56 @@ const readingTime = (content) => {
   return mins < 1 ? "< 1 min read" : `${mins} min read`;
 };
 
+const getTagColors = (tag) => {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash % 360);
+  return {
+    bg: `hsl(${h}, 85%, 95%)`,
+    text: `hsl(${h}, 55%, 30%)`,
+    border: `hsl(${h}, 70%, 85%)`
+  };
+};
+
+const highlightText = (text, search) => {
+  if (!search?.trim()) return text;
+  const parts = text.split(new RegExp(`(${search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+  return (
+    <span>
+      {parts.map((part, i) => 
+        part.toLowerCase() === search.toLowerCase() ? 
+          <mark key={i} style={{ background: 'yellow', color: 'black', padding: '0 2px', borderRadius: 2 }}>{part}</mark> : 
+          part
+      )}
+    </span>
+  );
+};
+
+const TEMPLATES = {
+  meeting: {
+    title: "Meeting Notes: [Project Name] - " + new Date().toLocaleDateString(),
+    content: `## Meeting Notes\n\n**Date:** ${new Date().toLocaleDateString()}\n**Attendees:**\n- \n\n### Agenda\n1. \n\n### Discussion\n- \n\n### Action Items\n- [ ] @assignee Task description`
+  },
+  bug: {
+    title: "Bug Report: [Issue Title]",
+    content: `## Bug Report\n\n### Description\nA clear description of the bug.\n\n### Steps to Reproduce\n1. Go to '...'\n2. Click on '...'\n3. See error\n\n### Expected Behavior\nWhat should have happened.\n\n### Actual Behavior\nWhat actually happened.\n\n### Environment\n- OS: \n- Browser: \n- Version: `
+  },
+  codereview: {
+    title: "Code Review: PR #[Number]",
+    content: `## Code Review\n\n**PR Link:** \n**Author:** \n\n### Key Changes\n- \n\n### Comments & Suggestions\n- **Security:** \n- **Performance:** \n- **Readability:** \n\n### Approved? [ ] Yes [ ] No`
+  },
+  journal: {
+    title: "Daily Journal - " + new Date().toLocaleDateString(),
+    content: `## Daily Journal\n\n**Date:** ${new Date().toLocaleDateString()}\n\n### Focus for Today\n- \n\n### What I Accomplished\n- \n\n### Reflections & Learnings\n- `
+  },
+  study: {
+    title: "Study Notes: [Topic]",
+    content: `## Study Notes: [Topic Name]\n\n### Core Concept\nBrief explanation of the main concept.\n\n### Key Principles\n1. \n2. \n\n### Examples / Code Snippets\n\`\`\`javascript\n// code example here\n\`\`\`\n\n### Summary & Takeaways\n- `
+  }
+};
+
 /* ── Warm Markdown Renderer ─────────────────────────────────── */
 function MarkdownRenderer({ content }) {
   return (
