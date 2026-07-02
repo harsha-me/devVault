@@ -384,6 +384,7 @@ function PreviousNotes() {
 
   const [notes,        setNotes]        = useState([]);
   const [error,        setError]        = useState(null);
+  const [loading,      setLoading]      = useState(true);
   const [editingId,    setEditingId]    = useState(null);
   const [users,        setUsers]        = useState([]);
   const [showShareBox, setShowShareBox] = useState(false);
@@ -395,6 +396,7 @@ function PreviousNotes() {
 
   const fetchNotes = useCallback(async () => {
     try {
+      setLoading(true);
       setError(null);
       const r = await axios.get(`${API_BASE}/getNotes/${email}`);
       setNotes(r.data);
@@ -402,6 +404,9 @@ function PreviousNotes() {
     catch (e) {
       console.log(e);
       setError("Failed to load notes. Please check the backend connection.");
+    }
+    finally {
+      setLoading(false);
     }
   }, [email]);
 
@@ -576,7 +581,12 @@ function PreviousNotes() {
           )}
 
           {/* Notes */}
-          {error ? (
+          {loading ? (
+            <div className="dv-card" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem', display: 'inline-block', animation: 'dvPulse 1.5s infinite' }}>⏳</div>
+              <p style={{ color: 'var(--stone-400)', fontSize: '0.9375rem' }}>Loading notes…</p>
+            </div>
+          ) : error ? (
             <div className="dv-card" style={{ padding: '4rem 2rem', textAlign: 'center', borderColor: 'var(--danger-light)', background: 'rgba(232,86,86,0.05)' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚠️</div>
               <p style={{ color: 'var(--danger)', fontSize: '0.9375rem', fontWeight: 600 }}>{error}</p>
