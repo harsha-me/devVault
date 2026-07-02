@@ -8,6 +8,8 @@ import ReceivedNotes from "./pages/ReceivedNotes";
 import Compiler from "./pages/Compiler";
 import Calendar from "./pages/Calendar";
 import Profile from "./pages/Profile";
+import Workspaces from "./pages/Workspaces";
+import WorkspaceView from "./pages/WorkspaceView";
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Route path="/compiler" element={<Compiler />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/workspaces" element={<Workspaces />} />
+        <Route path="/workspace/:id" element={<WorkspaceView />} />
       </Routes>
     </BrowserRouter>
   );

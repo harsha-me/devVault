@@ -280,6 +280,8 @@ function Dashboard() {
   const [mode,               setMode]               = useState("split");
   const [saving,             setSaving]             = useState(false);
   const [dashboardReminders, setDashboardReminders] = useState({ today: [], upcoming: [], overdue: [] });
+  const [workspaces,         setWorkspaces]         = useState([]);
+  const [selectedWorkspaceId,setSelectedWorkspaceId] = useState("");
   
   const [tagsInput,          setTagsInput]          = useState("");
   const [selectedTag,        setSelectedTag]        = useState(null);
@@ -289,6 +291,15 @@ function Dashboard() {
   const fetchNotes = useCallback(async () => {
     try { const res = await axios.get(`${API_BASE}/getNotes/${email}`); setNotes(res.data); }
     catch (e) { console.log(e); }
+  }, [email]);
+
+  const fetchWorkspaces = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/workspaces/user/${email}`);
+      setWorkspaces(res.data);
+    } catch (e) {
+      console.log("Error fetching workspaces", e);
+    }
   }, [email]);
 
   const fetchReminders = useCallback(async () => {
@@ -302,10 +313,10 @@ function Dashboard() {
   }, [email]);
 
   useEffect(() => {
-    if (token && email) { fetchNotes(); fetchUnreadCount(); fetchReminders(); }
+    if (token && email) { fetchNotes(); fetchUnreadCount(); fetchReminders(); fetchWorkspaces(); }
     const iv = setInterval(fetchUnreadCount, 5000);
     return () => clearInterval(iv);
-  }, [token, email, fetchNotes, fetchUnreadCount, fetchReminders]);
+  }, [token, email, fetchNotes, fetchUnreadCount, fetchReminders, fetchWorkspaces]);
 
   /* ── Keyboard shortcuts ── */
   useEffect(() => {
@@ -340,8 +351,17 @@ function Dashboard() {
     setSaving(true);
     const tags = tagsInput.split(",").map(t => t.trim()).filter(t => t.length > 0);
     try {
-      await axios.post(`${API_BASE}/addNote`, { email, title, content, tags });
-      setTitle(""); setContent(""); setTagsInput(""); fetchNotes();
+      const payload = {
+        email,
+        title,
+        content,
+        tags
+      };
+      if (selectedWorkspaceId) {
+        payload.workspaceId = parseInt(selectedWorkspaceId);
+      }
+      await axios.post(`${API_BASE}/addNote`, payload);
+      setTitle(""); setContent(""); setTagsInput(""); setSelectedWorkspaceId(""); fetchNotes();
     } catch (e) { console.log(e); alert("Failed to add note"); }
     finally { setSaving(false); }
   };
@@ -472,7 +492,7 @@ function Dashboard() {
           <div className="dv-card" style={{ marginBottom: '2.25rem', overflow: 'hidden' }}>
 
             <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--stone-50)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.9rem' }}>✏️</span>
                   <span style={{ fontWeight: 700, color: 'var(--stone-700)', fontSize: '0.875rem' }}>New Note</span>
@@ -501,6 +521,21 @@ function Dashboard() {
                   <option value="codereview">🔍 Code Review</option>
                   <option value="journal">📖 Daily Journal</option>
                   <option value="study">🎓 Study Notes</option>
+                </select>
+
+                <select
+                  value={selectedWorkspaceId}
+                  onChange={e => setSelectedWorkspaceId(e.target.value)}
+                  style={{
+                    background: 'var(--cream)', border: '1px solid var(--stone-200)',
+                    borderRadius: 8, padding: '4px 10px', fontSize: '0.75rem',
+                    fontWeight: 700, color: 'var(--stone-700)', cursor: 'pointer', outline: 'none'
+                  }}
+                >
+                  <option value="">📂 Personal Vault</option>
+                  {workspaces.map(ws => (
+                    <option key={ws.id} value={ws.id}>📁 {ws.name}</option>
+                  ))}
                 </select>
               </div>
               <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 10, padding: 3, gap: 2, border: '1px solid var(--stone-200)' }}>

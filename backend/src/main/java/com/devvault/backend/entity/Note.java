@@ -17,7 +17,8 @@ import java.util.ArrayList;
 
 @Entity
 @Table(name = "note", indexes = {
-    @Index(name = "idx_note_email", columnList = "email")
+    @Index(name = "idx_note_email", columnList = "email"),
+    @Index(name = "idx_note_workspace", columnList = "workspaceId")
 })
 public class Note {
 
@@ -34,6 +35,8 @@ public class Note {
     private String content;
 
     private boolean pinned = false;
+
+    private Long workspaceId;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "note_tags", joinColumns = @JoinColumn(name = "note_id"))
@@ -89,5 +92,13 @@ public class Note {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public Long getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(Long workspaceId) {
+        this.workspaceId = workspaceId;
     }
 }

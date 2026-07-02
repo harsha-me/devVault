@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Inbox, CalendarDays, Code2, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, FileText, Inbox, CalendarDays, Code2, LogOut, User, FolderKanban } from 'lucide-react';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard',  path: '/dashboard' },
   { icon: FileText,        label: 'My Notes',   path: '/previous-notes' },
+  { icon: FolderKanban,    label: 'Workspaces', path: '/workspaces' },
   { icon: Inbox,           label: 'Inbox',      path: '/received-notes' },
   { icon: CalendarDays,    label: 'Calendar',   path: '/calendar' },
   { icon: Code2,           label: 'Compiler',   path: '/compiler' },

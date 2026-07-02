@@ -43,5 +43,38 @@ public class DatabaseSchemaConfig implements CommandLineRunner {
         } catch (Exception e) {
             logger.warn("Could not create note_tags table: {}", e.getMessage());
         }
+
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS workspace (" +
+                    "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                    "name VARCHAR(255) NOT NULL," +
+                    "description VARCHAR(1000)," +
+                    "owner_email VARCHAR(255) NOT NULL," +
+                    "created_at DATE NOT NULL" +
+                    ")");
+            logger.info("Successfully ensured workspace table exists");
+        } catch (Exception e) {
+            logger.warn("Could not create workspace table: {}", e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS workspace_member (" +
+                    "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                    "workspace_id BIGINT NOT NULL," +
+                    "member_email VARCHAR(255) NOT NULL," +
+                    "role VARCHAR(50) NOT NULL," +
+                    "FOREIGN KEY (workspace_id) REFERENCES workspace(id) ON DELETE CASCADE" +
+                    ")");
+            logger.info("Successfully ensured workspace_member table exists");
+        } catch (Exception e) {
+            logger.warn("Could not create workspace_member table: {}", e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("ALTER TABLE note ADD COLUMN workspace_id BIGINT");
+            logger.info("Successfully added workspace_id column to note table");
+        } catch (Exception e) {
+            logger.info("Note.workspace_id column already exists: {}", e.getMessage());
+        }
     }
 }

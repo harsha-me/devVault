@@ -37,7 +37,7 @@ public class NoteController {
     public ResponseEntity<?> getNotes(@PathVariable String email) {
         logger.info("Fetching notes for email: {}", email);
         try {
-            List<Note> notes = noteRepository.findByEmailOrderByPinnedDescIdDesc(email);
+            List<Note> notes = noteRepository.findByEmailAndWorkspaceIdIsNullOrderByPinnedDescIdDesc(email);
             logger.info("Found {} notes for email: {}", notes.size(), email);
             return ResponseEntity.ok(notes);
         } catch (Exception e) {
