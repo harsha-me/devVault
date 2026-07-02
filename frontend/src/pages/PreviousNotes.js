@@ -248,10 +248,12 @@ function EditPanel({ note, onSave, onCancel }) {
 function NoteViewCard({ note, onEdit, onDelete, onShare, onRun, onTogglePin, searchQuery }) {
   const [hovered,       setHovered]       = useState(false);
   const [exportMenuOpen,setExportMenuOpen]= useState(false);
-  const hasCode = !!extractCode(note.content);
+  const noteContent = (note && note.content) || "";
+  const noteTitle = (note && note.title) || "Untitled Note";
+  const hasCode = !!extractCode(noteContent);
   // eslint-disable-next-line no-useless-escape
-  const preview = note.content.replace(/```[\s\S]*?```/g,"[code snippet]").replace(/[#*`>_~\[\]]/g,"").trim();
-  const readTime = readingTime(note.content);
+  const preview = noteContent.replace(/```[\s\S]*?```/g,"[code snippet]").replace(/[#*`>_~\[\]]/g,"").trim();
+  const readTime = readingTime(noteContent);
 
   return (
     <div
@@ -274,7 +276,7 @@ function NoteViewCard({ note, onEdit, onDelete, onShare, onRun, onTogglePin, sea
 
       <div style={{ padding: '1.125rem 1.25rem', flex: 1 }}>
         <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--stone-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: note.pinned ? '1.5rem' : 0 }}>
-          {highlightText(note.title, searchQuery)}
+          {highlightText(noteTitle, searchQuery)}
         </h2>
         
         {/* Reading time & Tag chips */}
@@ -381,6 +383,7 @@ function PreviousNotes() {
   const navigate = useNavigate();
 
   const [notes,        setNotes]        = useState([]);
+  const [error,        setError]        = useState(null);
   const [editingId,    setEditingId]    = useState(null);
   const [users,        setUsers]        = useState([]);
   const [showShareBox, setShowShareBox] = useState(false);
@@ -391,8 +394,15 @@ function PreviousNotes() {
   const searchRef = useRef(null);
 
   const fetchNotes = useCallback(async () => {
-    try { const r = await axios.get(`${API_BASE}/getNotes/${email}`); setNotes(r.data); }
-    catch (e) { console.log(e); }
+    try {
+      setError(null);
+      const r = await axios.get(`${API_BASE}/getNotes/${email}`);
+      setNotes(r.data);
+    }
+    catch (e) {
+      console.log(e);
+      setError("Failed to load notes. Please check the backend connection.");
+    }
   }, [email]);
 
   const fetchUsers = useCallback(async () => {
@@ -452,17 +462,19 @@ function PreviousNotes() {
   };
 
   // Get all unique tags across notes
-  const allTags = Array.from(new Set(notes.flatMap(n => n.tags || [])));
+  const allTags = Array.from(new Set((notes || []).flatMap(n => (n && n.tags) || [])));
 
-  const filtered = notes.filter(n => {
-    const matchesSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
-                          n.content.toLowerCase().includes(search.toLowerCase());
-    const matchesTag = !selectedTag || (n.tags && n.tags.includes(selectedTag));
+  const filtered = (notes || []).filter(n => {
+    const titleText = (n && n.title) || "";
+    const contentText = (n && n.content) || "";
+    const matchesSearch = titleText.toLowerCase().includes(search.toLowerCase()) ||
+                          contentText.toLowerCase().includes(search.toLowerCase());
+    const matchesTag = !selectedTag || (n && n.tags && n.tags.includes(selectedTag));
     return matchesSearch && matchesTag;
   });
 
-  const pinnedFiltered   = filtered.filter(n => n.pinned);
-  const unpinnedFiltered = filtered.filter(n => !n.pinned);
+  const pinnedFiltered   = filtered.filter(n => n && n.pinned);
+  const unpinnedFiltered = filtered.filter(n => n && !n.pinned);
 
   const renderCard = (note) =>
     editingId === note.id ? (
@@ -564,7 +576,13 @@ function PreviousNotes() {
           )}
 
           {/* Notes */}
-          {filtered.length === 0 ? (
+          {error ? (
+            <div className="dv-card" style={{ padding: '4rem 2rem', textAlign: 'center', borderColor: 'var(--danger-light)', background: 'rgba(232,86,86,0.05)' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚠️</div>
+              <p style={{ color: 'var(--danger)', fontSize: '0.9375rem', fontWeight: 600 }}>{error}</p>
+              <button onClick={fetchNotes} className="dv-btn dv-btn-primary" style={{ marginTop: '1rem', padding: '8px 20px', borderRadius: 10 }}>Retry</button>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="dv-card" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{search ? '🔍' : '📝'}</div>
               <p style={{ color: 'var(--stone-400)', fontSize: '0.9375rem' }}>

@@ -144,10 +144,12 @@ function NoteCard({ note, onTogglePin, searchQuery }) {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
   const [pinHovered, setPinHovered] = useState(false);
+  const noteContent = (note && note.content) || "";
+  const noteTitle = (note && note.title) || "Untitled Note";
   // eslint-disable-next-line no-useless-escape
-  const preview = note.content.replace(/```[\s\S]*?```/g, "[code]").replace(/[#*`>_~\[\]]/g, "").trim();
-  const extractedCode = extractCode(note.content);
-  const readTime = readingTime(note.content);
+  const preview = noteContent.replace(/```[\s\S]*?```/g, "[code]").replace(/[#*`>_~\[\]]/g, "").trim();
+  const extractedCode = extractCode(noteContent);
+  const readTime = readingTime(noteContent);
 
   return (
     <div
@@ -173,7 +175,7 @@ function NoteCard({ note, onTogglePin, searchQuery }) {
         marginBottom: '0.375rem', overflow: 'hidden', textOverflow: 'ellipsis',
         whiteSpace: 'nowrap', paddingRight: note.pinned ? '1.25rem' : 0,
       }}>
-        {highlightText(note.title, searchQuery)}
+        {highlightText(noteTitle, searchQuery)}
       </h3>
 
       {/* Reading time & Tag chips */}
@@ -405,14 +407,16 @@ function Dashboard() {
   ];
 
   // Get all unique tags across all notes
-  const allTags = Array.from(new Set(notes.flatMap(n => n.tags || [])));
+  const allTags = Array.from(new Set((notes || []).flatMap(n => (n && n.tags) || [])));
 
   // Filter notes by search query and tag
-  const filteredNotes = notes.filter(n => {
+  const filteredNotes = (notes || []).filter(n => {
+    const titleText = (n && n.title) || "";
+    const contentText = (n && n.content) || "";
     const matchesSearch = !searchQuery.trim() || 
-      n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTag = !selectedTag || (n.tags && n.tags.includes(selectedTag));
+      titleText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contentText.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTag = !selectedTag || (n && n.tags && n.tags.includes(selectedTag));
     return matchesSearch && matchesTag;
   });
 

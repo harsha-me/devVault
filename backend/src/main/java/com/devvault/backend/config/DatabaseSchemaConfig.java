@@ -31,5 +31,16 @@ public class DatabaseSchemaConfig implements CommandLineRunner {
         } catch (Exception e) {
             logger.warn("Could not alter shared_note.content column: {}", e.getMessage());
         }
+
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS note_tags (" +
+                    "note_id BIGINT NOT NULL," +
+                    "tag VARCHAR(255) NOT NULL," +
+                    "FOREIGN KEY (note_id) REFERENCES note(id) ON DELETE CASCADE" +
+                    ")");
+            logger.info("Successfully ensured note_tags table exists");
+        } catch (Exception e) {
+            logger.warn("Could not create note_tags table: {}", e.getMessage());
+        }
     }
 }
