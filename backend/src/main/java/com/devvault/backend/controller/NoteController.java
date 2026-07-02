@@ -19,6 +19,25 @@ public class NoteController {
     @Autowired
     private NoteRepository noteRepository;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @GetMapping("/debug-migration")
+    public ResponseEntity<String> debugMigration() {
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS note_tags (" +
+                    "note_id BIGINT NOT NULL," +
+                    "tag VARCHAR(255) NOT NULL," +
+                    "FOREIGN KEY (note_id) REFERENCES note(id) ON DELETE CASCADE" +
+                    ")");
+            return ResponseEntity.ok("Successfully created note_tags table!");
+        } catch (Exception e) {
+            java.io.StringWriter sw = new java.io.StringWriter();
+            e.printStackTrace(new java.io.PrintWriter(sw));
+            return ResponseEntity.status(500).body("Failed: " + e.getMessage() + "\n\n" + sw.toString());
+        }
+    }
+
     @PostMapping("/addNote")
     public ResponseEntity<?> addNote(@RequestBody Note note) {
         logger.info("Adding note for email: {}", note.getEmail());
