@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
-import { Users, X, Search, Zap, Pin, PinOff, FileDown, Download } from "lucide-react";
+import { Users, X, Search, Zap, Pin, PinOff, FileDown, Download, Sparkles } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import jsPDF from "jspdf";
+import AiCompanion from "../components/AiCompanion";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -278,6 +279,9 @@ function EditPanel({ note, onSave, onCancel }) {
   const [mode, setMode] = useState("split");
   const taRef = useRef(null);
 
+  const [aiOpen, setAiOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+
   const insertAtCursor = (before, after = "", placeholder = "") => {
     const ta = taRef.current; if (!ta) return;
     const s = ta.selectionStart, e = ta.selectionEnd;
@@ -297,10 +301,33 @@ function EditPanel({ note, onSave, onCancel }) {
     <div className="dv-card" style={{ overflow: 'hidden', marginBottom: '0.5rem', gridColumn: '1 / -1' }}>
       <div style={{ padding: '0.75rem 1.25rem', background: 'var(--stone-50)', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em' }}>✏️ EDITING</span>
-        <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 9, padding: 3, gap: 2 }}>
-          {[{ key: 'write', icon: '✏️' }, { key: 'split', icon: '⬛' }, { key: 'preview', icon: '👁️' }].map(({ key, icon }) => (
-            <button key={key} onClick={() => setMode(key)} style={{ padding: '4px 11px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, background: mode === key ? 'var(--cream)' : 'transparent', color: mode === key ? 'var(--stone-900)' : 'var(--stone-400)', fontFamily: 'inherit' }}>{icon}</button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <button
+            onClick={() => setAiOpen(!aiOpen)}
+            style={{
+              background: aiOpen ? 'var(--accent-light)' : 'var(--cream)',
+              border: `1px solid ${aiOpen ? 'var(--accent)' : 'var(--stone-200)'}`,
+              borderRadius: 8,
+              color: aiOpen ? 'var(--accent)' : 'var(--stone-700)',
+              padding: '4px 10px',
+              cursor: 'pointer',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              transition: 'all 0.18s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              fontFamily: 'inherit',
+            }}
+          >
+            <Sparkles size={11} style={{ color: aiOpen ? 'var(--accent)' : 'var(--stone-500)', fill: aiOpen ? 'var(--accent)' : 'none' }} />
+            AI Companion
+          </button>
+          <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 9, padding: 3, gap: 2 }}>
+            {[{ key: 'write', icon: '✏️' }, { key: 'split', icon: '⬛' }, { key: 'preview', icon: '👁️' }].map(({ key, icon }) => (
+              <button key={key} onClick={() => setMode(key)} style={{ padding: '4px 11px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, background: mode === key ? 'var(--cream)' : 'transparent', color: mode === key ? 'var(--stone-900)' : 'var(--stone-400)', fontFamily: 'inherit' }}>{icon}</button>
+            ))}
+          </div>
         </div>
       </div>
       <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -323,7 +350,21 @@ function EditPanel({ note, onSave, onCancel }) {
       <div style={{ display: 'flex', minHeight: 260 }}>
         {(mode === 'write' || mode === 'split') && (
           <div style={{ flex: 1, borderRight: mode === 'split' ? '1px solid var(--stone-200)' : 'none', display: 'flex', flexDirection: 'column' }}>
-            <textarea ref={taRef} value={editContent} onChange={e => setEditContent(e.target.value)} style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', padding: '1rem 1.25rem', color: 'var(--stone-700)', fontSize: '0.875rem', fontFamily: 'monospace', lineHeight: '1.75', minHeight: 220 }} />
+            <textarea
+              ref={taRef}
+              value={editContent}
+              onChange={e => setEditContent(e.target.value)}
+              onSelect={e => {
+                const start = e.target.selectionStart;
+                const end = e.target.selectionEnd;
+                if (start !== end) {
+                  setSelectedText(e.target.value.substring(start, end));
+                } else {
+                  setSelectedText("");
+                }
+              }}
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', padding: '1rem 1.25rem', color: 'var(--stone-700)', fontSize: '0.875rem', fontFamily: 'monospace', lineHeight: '1.75', minHeight: 220 }}
+            />
           </div>
         )}
         {(mode === 'preview' || mode === 'split') && (
@@ -338,6 +379,19 @@ function EditPanel({ note, onSave, onCancel }) {
         <button onClick={onCancel} className="dv-btn dv-btn-ghost" style={{ padding: '8px 18px', borderRadius: 10 }}>Cancel</button>
         <button onClick={() => onSave(editTitle, editContent, editTags)} className="dv-btn dv-btn-primary" style={{ padding: '8px 20px', borderRadius: 10 }}>💾 Save Changes</button>
       </div>
+      <AiCompanion
+        isOpen={aiOpen}
+        onClose={() => setAiOpen(false)}
+        noteTitle={editTitle}
+        noteContent={editContent}
+        selectedText={selectedText}
+        onInsertContent={insertAtCursor}
+        onReplaceContent={(code) => {
+          if (window.confirm("Replace your current note content with this code block?")) {
+            setEditContent(code);
+          }
+        }}
+      />
     </div>
   );
 }

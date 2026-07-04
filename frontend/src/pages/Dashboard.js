@@ -6,9 +6,10 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import { ChevronRight, Zap, Pin, PinOff } from "lucide-react";
+import { ChevronRight, Zap, Pin, PinOff, Sparkles } from "lucide-react";
 import * as calendarService from "../services/calendarService";
 import Sidebar from "../components/Sidebar";
+import AiCompanion from "../components/AiCompanion";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
@@ -288,6 +289,9 @@ function Dashboard() {
   const [searchQuery,        setSearchQuery]        = useState("");
   const searchInputRef = useRef(null);
 
+  const [aiOpen,             setAiOpen]             = useState(false);
+  const [selectedText,       setSelectedText]       = useState("");
+
   const fetchNotes = useCallback(async () => {
     try { const res = await axios.get(`${API_BASE}/getNotes/${email}`); setNotes(res.data); }
     catch (e) { console.log(e); }
@@ -447,6 +451,19 @@ function Dashboard() {
   return (
     <div className="dv-page">
       <Sidebar unreadCount={unreadCount} />
+      <AiCompanion
+        isOpen={aiOpen}
+        onClose={() => setAiOpen(false)}
+        noteTitle={title}
+        noteContent={content}
+        selectedText={selectedText}
+        onInsertContent={insertAtCursor}
+        onReplaceContent={(code) => {
+          if (window.confirm("Replace your current note content with this code block?")) {
+            setContent(code);
+          }
+        }}
+      />
 
       <main className="dv-main">
         <div className="dv-content dv-fade-up">
@@ -538,7 +555,29 @@ function Dashboard() {
                   ))}
                 </select>
               </div>
-              <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 10, padding: 3, gap: 2, border: '1px solid var(--stone-200)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  onClick={() => setAiOpen(!aiOpen)}
+                  style={{
+                    background: aiOpen ? 'var(--accent-light)' : 'var(--cream)',
+                    border: `1px solid ${aiOpen ? 'var(--accent)' : 'var(--stone-200)'}`,
+                    borderRadius: 9,
+                    color: aiOpen ? 'var(--accent)' : 'var(--stone-700)',
+                    padding: '5px 12px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    transition: 'all 0.18s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <Sparkles size={12} style={{ color: aiOpen ? 'var(--accent)' : 'var(--stone-500)', fill: aiOpen ? 'var(--accent)' : 'none' }} />
+                  AI Companion
+                </button>
+                <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 10, padding: 3, gap: 2, border: '1px solid var(--stone-200)' }}>
                 {[
                   { key: 'write',   label: 'Write',   icon: '✏️' },
                   { key: 'split',   label: 'Split',   icon: '⬛' },
@@ -557,6 +596,7 @@ function Dashboard() {
                 ))}
               </div>
             </div>
+          </div>
 
             {/* Title & Tags */}
             <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -603,6 +643,15 @@ function Dashboard() {
                     ref={textareaRef}
                     value={content}
                     onChange={e => setContent(e.target.value)}
+                    onSelect={e => {
+                      const start = e.target.selectionStart;
+                      const end = e.target.selectionEnd;
+                      if (start !== end) {
+                        setSelectedText(e.target.value.substring(start, end));
+                      } else {
+                        setSelectedText("");
+                      }
+                    }}
                     placeholder={"Write in Markdown…\n\n# My Heading\n**bold**, _italic_, `code`\n\n```javascript\nconst greet = () => 'Hello DevVault!';\n```"}
                     style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', padding: '1.25rem 1.5rem', color: 'var(--stone-700)', fontSize: '0.875rem', fontFamily: "'JetBrains Mono','Fira Code','Courier New',monospace", lineHeight: '1.8', minHeight: 260 }}
                   />
