@@ -162,7 +162,8 @@ export default function AiCompanion({
         transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'Plus Jakarta Sans', sans-serif"
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        overflow: "hidden"
       }}
     >
       {/* Header */}
@@ -173,7 +174,8 @@ export default function AiCompanion({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "var(--stone-50)"
+          background: "var(--stone-50)",
+          flexShrink: 0
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -225,7 +227,8 @@ export default function AiCompanion({
             padding: "1.25rem",
             background: "var(--stone-50)",
             borderBottom: "1px solid var(--stone-200)",
-            animation: "dvFadeUp 0.3s ease"
+            animation: "dvFadeUp 0.3s ease",
+            flexShrink: 0
           }}
         >
           <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.8rem", fontWeight: 700, color: "var(--stone-900)" }}>
@@ -279,7 +282,8 @@ export default function AiCompanion({
             fontWeight: 600,
             display: "flex",
             alignItems: "center",
-            gap: "6px"
+            gap: "6px",
+            flexShrink: 0
           }}
         >
           <Check size={12} /> {successMsg}
@@ -295,7 +299,8 @@ export default function AiCompanion({
           overflowX: "auto",
           borderBottom: "1px solid var(--stone-200)",
           background: "var(--stone-50)",
-          scrollbarWidth: "none"
+          scrollbarWidth: "none",
+          flexShrink: 0
         }}
       >
         <button
@@ -372,7 +377,8 @@ export default function AiCompanion({
             fontWeight: 600,
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center"
+            alignItems: "center",
+            flexShrink: 0
           }}
         >
           <span>🎯 Highlighted text selected as context ({selectedText.trim().length} chars)</span>
@@ -386,17 +392,18 @@ export default function AiCompanion({
           style={{
             background: "var(--danger-light)",
             borderBottom: "1px solid var(--danger-light)",
-            padding: "8px 12px",
+            padding: "10px 14px",
             fontSize: "0.72rem",
             color: "var(--danger)",
             fontWeight: 600,
             display: "flex",
-            alignItems: "center",
-            gap: "6px"
+            alignItems: "flex-start",
+            gap: "8px",
+            flexShrink: 0
           }}
         >
-          <AlertCircle size={12} />
-          <span>{error}</span>
+          <AlertCircle size={14} style={{ flexShrink: 0, marginTop: "2px" }} />
+          <div style={{ flex: 1, wordBreak: "break-word", lineHeight: 1.4 }}>{error}</div>
           <button
             onClick={() => setError("")}
             style={{
@@ -404,11 +411,12 @@ export default function AiCompanion({
               border: "none",
               color: "var(--danger)",
               cursor: "pointer",
-              marginLeft: "auto",
               fontWeight: 700,
               padding: 0,
               fontFamily: "inherit",
-              fontSize: "0.7rem"
+              fontSize: "0.7rem",
+              flexShrink: 0,
+              marginLeft: "8px"
             }}
           >
             Dismiss
@@ -593,7 +601,8 @@ export default function AiCompanion({
           background: "var(--stone-50)",
           display: "flex",
           gap: "8px",
-          alignItems: "flex-end"
+          alignItems: "flex-end",
+          flexShrink: 0
         }}
       >
         <textarea
