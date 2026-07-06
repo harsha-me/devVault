@@ -60,13 +60,13 @@ function Signup() {
   };
 
   return (
-    <div style={{
+    <div className="auth-page-container" style={{
       minHeight: '100vh', display: 'flex',
       background: 'var(--ivory)',
       fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>
       {/* Decorative left panel */}
-      <div style={{
+      <div className="auth-panel-left" style={{
         flex: '0 0 42%',
         background: 'var(--sage)',
         display: 'flex', flexDirection: 'column',
@@ -104,7 +104,7 @@ function Signup() {
       </div>
 
       {/* Form panel */}
-      <div style={{
+      <div className="auth-form-right" style={{
         flex: 1, display: 'flex',
         alignItems: 'center', justifyContent: 'center',
         padding: '3rem 4.5rem',

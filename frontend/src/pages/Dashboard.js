@@ -348,6 +348,18 @@ function Dashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content, tagsInput]);
 
+  // Handle mobile screen resize fallback for Split mode
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768 && mode === 'split') {
+        setMode('write');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial check
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mode]);
+
   if (!token) return <Navigate to="/login" />;
 
   const handleAddNote = async () => {
@@ -469,7 +481,7 @@ function Dashboard() {
         <div className="dv-content dv-fade-up">
 
           {/* ── Greeting ── */}
-          <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--stone-900)', letterSpacing: '-0.025em', marginBottom: '0.25rem', lineHeight: 1.2 }}>
                 {greeting}, {firstName} {timeEmoji}
@@ -493,7 +505,7 @@ function Dashboard() {
           </div>
 
           {/* ── Stats row ── */}
-          <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '0.875rem', marginBottom: '2rem' }}>
+          <div className="dv-stagger dv-responsive-grid-4" style={{ display: 'grid', gap: '0.875rem', marginBottom: '2rem' }}>
             {statItems.map(({ label, value, bg, border, color, icon }) => (
               <div key={label} className="dv-stat dv-fade-up" style={{ background: bg, borderColor: border }}>
                 <span style={{ fontSize: '1.375rem' }}>{icon}</span>
@@ -508,7 +520,7 @@ function Dashboard() {
           {/* ── Note Editor ── */}
           <div className="dv-card" style={{ marginBottom: '2.25rem', overflow: 'hidden' }}>
 
-            <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--stone-50)' }}>
+            <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--stone-50)', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.9rem' }}>✏️</span>
@@ -579,11 +591,11 @@ function Dashboard() {
                 </button>
                 <div style={{ display: 'flex', background: 'var(--stone-100)', borderRadius: 10, padding: 3, gap: 2, border: '1px solid var(--stone-200)' }}>
                 {[
-                  { key: 'write',   label: 'Write',   icon: '✏️' },
-                  { key: 'split',   label: 'Split',   icon: '⬛' },
-                  { key: 'preview', label: 'Preview', icon: '👁️' },
-                ].map(({ key, icon, label }) => (
-                  <button key={key} onClick={() => setMode(key)} style={{
+                  { key: 'write',   label: 'Write',   icon: '✏️', className: '' },
+                  { key: 'split',   label: 'Split',   icon: '⬛', className: 'hidden md:inline-block' },
+                  { key: 'preview', label: 'Preview', icon: '👁️', className: '' },
+                ].map(({ key, icon, label, className }) => (
+                  <button key={key} className={className} onClick={() => setMode(key)} style={{
                     padding: '5px 13px', borderRadius: 7, border: 'none', cursor: 'pointer',
                     fontSize: '0.75rem', fontWeight: 700, transition: 'all 0.18s',
                     background: mode === key ? 'var(--cream)' : 'transparent',
@@ -599,19 +611,20 @@ function Dashboard() {
           </div>
 
             {/* Title & Tags */}
-            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 ref={titleInputRef}
                 type="text" placeholder="Note title… (Ctrl+N to focus)"
                 value={title} onChange={e => setTitle(e.target.value)}
-                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '1.25rem', fontWeight: 700, color: 'var(--stone-900)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ flex: 1, minWidth: 200, background: 'transparent', border: 'none', outline: 'none', fontSize: '1.25rem', fontWeight: 700, color: 'var(--stone-900)', fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
-              <div style={{ width: 1, height: 24, background: 'var(--stone-200)' }} />
+              <div className="hidden md:block" style={{ width: 1, height: 24, background: 'var(--stone-200)' }} />
               <input
                 type="text"
                 placeholder="🏷️ Tags (comma-separated)"
                 value={tagsInput}
                 onChange={e => setTagsInput(e.target.value)}
+                className="dashboard-tags-input"
                 style={{ width: '30%', background: 'transparent', border: 'none', outline: 'none', fontSize: '0.85rem', color: 'var(--stone-600)', fontFamily: 'inherit', boxSizing: 'border-box', fontWeight: 600 }}
               />
             </div>

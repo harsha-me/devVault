@@ -151,7 +151,7 @@ export default function AiCompanion({
       style={{
         position: "fixed",
         top: 0,
-        right: isOpen ? 0 : "-430px",
+        right: isOpen ? 0 : "-105%",
         width: "400px",
         maxWidth: "100%",
         height: "100vh",

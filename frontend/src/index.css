@@ -302,3 +302,83 @@ body {
   overflow: hidden;
   animation: dvScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ── Mobile Layout Adjustments ───────────────────────────── */
+@media (max-width: 768px) {
+  .dv-main {
+    margin-left: 0 !important;
+    padding-top: 60px !important; /* Space for mobile top bar */
+  }
+  .dv-content {
+    padding: 1.25rem 1rem !important;
+  }
+  
+  /* Authentication Responsive Columns */
+  .auth-page-container {
+    flex-direction: column !important;
+  }
+  .auth-panel-left {
+    display: none !important;
+  }
+  .auth-form-right {
+    padding: 2.5rem 1.5rem !important;
+  }
+
+  /* Dashboard Stats Grid Wrapper */
+  .dv-responsive-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Compiler & Calendar Mobile Views */
+  .compiler-panes-container {
+    flex-direction: column !important;
+  }
+  .workspace-view-container {
+    grid-template-columns: 1fr !important;
+  }
+  .calendar-body-container {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+    gap: 1rem !important;
+  }
+  .reminder-list-container {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  /* Calendar grid changes */
+  .calendar-grid-cell-responsive {
+    min-height: 55px !important;
+    padding: 4px 6px !important;
+  }
+  .calendar-grid-cell-reminder-text {
+    display: none !important;
+  }
+  .calendar-grid-cell-reminders-container {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 3px !important;
+    margin-top: 4px !important;
+  }
+  .calendar-grid-cell-reminder-dot {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    text-indent: -9999px !important;
+  }
+  
+  /* Always show edit actions on mobile */
+  .reminder-actions {
+    opacity: 1 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dv-responsive-grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+}

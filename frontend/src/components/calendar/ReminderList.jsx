@@ -9,7 +9,7 @@ const ReminderList = ({ selectedDate, reminders, onAdd, onEdit, onDelete }) => {
   const todayReminders = reminders.filter(r => r.date === dateStr);
 
   return (
-    <div style={{
+    <div className="reminder-list-container" style={{
       width: 300, minWidth: 300, display: 'flex', flexDirection: 'column',
       background: 'var(--cream)',
       border: '1px solid var(--stone-200)',

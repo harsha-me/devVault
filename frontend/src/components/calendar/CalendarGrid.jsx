@@ -31,6 +31,7 @@ const CalendarGrid = ({ currentDate, selectedDate, onDateClick, reminders }) => 
               ref={provided.innerRef}
               {...provided.droppableProps}
               onClick={() => onDateClick(cloneDay)}
+              className="calendar-grid-cell-responsive"
               style={{
                 minHeight: 96,
                 padding: '0.5rem 0.625rem',
@@ -81,9 +82,9 @@ const CalendarGrid = ({ currentDate, selectedDate, onDateClick, reminders }) => 
               </div>
 
               {/* Reminder dots */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden', maxHeight: 52 }}>
+              <div className="calendar-grid-cell-reminders-container" style={{ display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden', maxHeight: 52 }}>
                 {dayReminders.slice(0, 3).map((rem, idx) => (
-                  <div key={idx} style={{
+                  <div key={idx} className="calendar-grid-cell-reminder-dot" style={{
                     fontSize: '0.65rem', padding: '2px 5px', borderRadius: 5,
                     fontWeight: 600,
                     background: rem.reminderColor + '22',
@@ -91,11 +92,11 @@ const CalendarGrid = ({ currentDate, selectedDate, onDateClick, reminders }) => 
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     lineHeight: 1.4,
                   }}>
-                    · {rem.title}
+                    <span className="calendar-grid-cell-reminder-text">· {rem.title}</span>
                   </div>
                 ))}
                 {dayReminders.length > 3 && (
-                  <div style={{ fontSize: '0.6rem', color: 'var(--stone-400)', paddingLeft: 4 }}>
+                  <div className="calendar-grid-cell-reminder-text" style={{ fontSize: '0.6rem', color: 'var(--stone-400)', paddingLeft: 4 }}>
                     +{dayReminders.length - 3} more
                   </div>
                 )}

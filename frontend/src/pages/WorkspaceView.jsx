@@ -600,12 +600,12 @@ function WorkspaceView() {
     <div className="dv-page">
       <Sidebar />
       <main className="dv-main">
-        <div className="dv-content dv-fade-up" style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '2rem', alignItems: 'start' }}>
+        <div className="dv-content dv-fade-up workspace-view-container" style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '2rem', alignItems: 'start' }}>
           
           {/* Main workspace area */}
           <div>
             {/* Header */}
-            <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--stone-900)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
                   📁 {workspace?.name}

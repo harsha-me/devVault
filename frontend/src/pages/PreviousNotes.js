@@ -563,7 +563,7 @@ function PreviousNotes() {
         <div className="dv-content dv-fade-up">
 
           {/* Header */}
-          <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--stone-900)', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>My Notes</h1>
               <p style={{ color: 'var(--stone-400)', fontSize: '0.875rem' }}>
@@ -571,7 +571,7 @@ function PreviousNotes() {
               </p>
             </div>
             {/* Search */}
-            <div style={{ position: 'relative', width: 280 }}>
+            <div style={{ position: 'relative', width: 280, minWidth: 200 }}>
               <Search size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--stone-400)', pointerEvents: 'none' }} />
               <input
                 ref={searchRef}
@@ -663,7 +663,7 @@ function PreviousNotes() {
                     <Pin size={14} style={{ color: 'var(--accent)', fill: 'var(--accent)' }} />
                     <span className="dv-section-heading">Pinned</span>
                   </div>
-                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '1.125rem' }}>
+                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1.125rem' }}>
                     {pinnedFiltered.map(renderCard)}
                   </div>
                 </div>
@@ -677,7 +677,7 @@ function PreviousNotes() {
                       <span className="dv-section-heading">Other Notes</span>
                     </div>
                   )}
-                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '1.125rem' }}>
+                  <div className="dv-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1.125rem' }}>
                     {unpinnedFiltered.map(renderCard)}
                   </div>
                 </>

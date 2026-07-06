@@ -101,13 +101,14 @@ function CalendarPage() {
 
         {/* ── Top bar ── */}
         <div style={{
-          height: 60, background: 'var(--cream)',
+          minHeight: 60, height: 'auto', background: 'var(--cream)',
           borderBottom: '1px solid var(--stone-200)',
           display: 'flex', alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 1.75rem',
+          padding: '8px 1.25rem',
           flexShrink: 0,
           position: 'sticky', top: 0, zIndex: 50,
+          flexWrap: 'wrap', gap: '8px'
         }}>
           {/* Month nav */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -145,7 +146,7 @@ function CalendarPage() {
         </div>
 
         {/* ── Calendar body ── */}
-        <div style={{ flex: 1, display: 'flex', padding: '1.25rem 1.75rem', gap: '1.25rem', overflow: 'hidden', minHeight: 0 }}>
+        <div className="calendar-body-container" style={{ flex: 1, display: 'flex', padding: '1.25rem 1.75rem', gap: '1.25rem', overflow: 'hidden', minHeight: 0 }}>
           <DragDropContext onDragEnd={onDragEnd}>
             <CalendarGrid
               currentDate={currentDate}

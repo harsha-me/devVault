@@ -161,16 +161,17 @@ function Compiler() {
     <div className="dv-page" style={{ flexDirection: 'column' }}>
       <Sidebar />
 
-      <div style={{ marginLeft: 72, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div className="dv-main" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
         {/* ── Top bar ── */}
         <div style={{
-          height: 56, background: 'var(--cream)',
+          minHeight: 56, height: 'auto', background: 'var(--cream)',
           borderBottom: '1px solid var(--stone-200)',
           display: 'flex', alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 1.75rem', flexShrink: 0,
+          padding: '8px 1.25rem', flexShrink: 0,
           position: 'sticky', top: 0, zIndex: 50,
+          flexWrap: 'wrap', gap: '8px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--stone-500)', background: 'var(--stone-100)', padding: '4px 10px', borderRadius: 7, border: '1px solid var(--stone-200)', fontFamily: 'monospace' }}>
@@ -215,21 +216,21 @@ function Compiler() {
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
-            <button onClick={() => { setShareModalOpen(true); setNoteTitle(""); setReceiverEmail(""); }} disabled={isSharing} className="dv-btn dv-btn-ghost" style={{ padding: '7px 16px', borderRadius: 10, fontSize: '0.8125rem' }}>
-              <Share2 size={14} /> Share
+            <button onClick={() => { setShareModalOpen(true); setNoteTitle(""); setReceiverEmail(""); }} disabled={isSharing} className="dv-btn dv-btn-ghost" style={{ padding: '7px 12px', borderRadius: 10, fontSize: '0.8125rem', gap: 4 }}>
+              <Share2 size={14} /><span className="hidden sm:inline"> Share</span>
             </button>
-            <button onClick={() => { setSaveModalOpen(true); setNoteTitle(""); }} disabled={isSaving} className="dv-btn dv-btn-ghost" style={{ padding: '7px 16px', borderRadius: 10, fontSize: '0.8125rem' }}>
-              <Save size={14} /> Save
+            <button onClick={() => { setSaveModalOpen(true); setNoteTitle(""); }} disabled={isSaving} className="dv-btn dv-btn-ghost" style={{ padding: '7px 12px', borderRadius: 10, fontSize: '0.8125rem', gap: 4 }}>
+              <Save size={14} /><span className="hidden sm:inline"> Save</span>
             </button>
-            <button onClick={handleRun} disabled={isRunning} className="dv-btn dv-btn-sage" style={{ padding: '8px 20px', borderRadius: 10, fontSize: '0.875rem' }}>
-              <Play size={14} fill="currentColor" /> {isRunning ? 'Running…' : 'Run'}
-              <kbd style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 5px' }}>⌃↵</kbd>
+            <button onClick={handleRun} disabled={isRunning} className="dv-btn dv-btn-sage" style={{ padding: '8px 16px', borderRadius: 10, fontSize: '0.875rem', gap: 4 }}>
+              <Play size={14} fill="currentColor" /> <span className="hidden sm:inline">{isRunning ? 'Running…' : 'Run'}</span>
+              <kbd className="hidden md:inline-block" style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 5px' }}>⌃↵</kbd>
             </button>
           </div>
         </div>
 
         {/* ── Editor + Output ── */}
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        <div className="compiler-panes-container" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
           {/* Monaco editor pane (stays dark — code editors need dark bg) */}
           <div style={{ flex: 1, borderRight: '1px solid var(--stone-200)', display: 'flex', flexDirection: 'column' }}>
