@@ -164,13 +164,12 @@ function Compiler() {
       <div className="dv-main" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
         {/* ── Top bar ── */}
-        <div style={{
+        <div className="dv-sticky-topbar" style={{
           minHeight: 56, height: 'auto', background: 'var(--cream)',
           borderBottom: '1px solid var(--stone-200)',
           display: 'flex', alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 1.25rem', flexShrink: 0,
-          position: 'sticky', top: 0, zIndex: 50,
           flexWrap: 'wrap', gap: '8px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

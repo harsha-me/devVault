@@ -151,7 +151,7 @@ function Sidebar({ unreadCount = 0 }) {
         position: 'fixed', left: 0, top: 0,
         background: 'var(--cream)',
         borderRight: '1px solid var(--stone-200)',
-        display: 'flex', flexDirection: 'column',
+        flexDirection: 'column',
         alignItems: 'center',
         padding: '1.25rem 0',
         zIndex: 100,
@@ -197,7 +197,7 @@ function Sidebar({ unreadCount = 0 }) {
       <header className="flex md:hidden" style={{
         position: 'fixed', top: 0, left: 0, right: 0, height: 56,
         background: 'var(--cream)', borderBottom: '1px solid var(--stone-200)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        alignItems: 'center', justifyContent: 'space-between',
         padding: '0 1rem', zIndex: 99,
       }}>
         <button
