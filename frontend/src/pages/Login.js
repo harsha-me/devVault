@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -87,13 +87,27 @@ function Login() {
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState("");
   const [showPass,    setShowPass]    = useState(false);
+  const [slowHint,    setSlowHint]    = useState(false);
+
+  // Pre-warm the backend while user types (Render free-tier cold start mitigation)
+  useEffect(() => {
+    axios.get(`${API_BASE}/users`, { timeout: 60000 }).catch(() => {});
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSlowHint(false);
+
+    // Show a helpful hint if the server takes > 5s (Render free-tier cold start)
+    const hintTimer = setTimeout(() => setSlowHint(true), 5000);
+
     try {
-      const response = await axios.post(`${API_BASE}/login`, { email, password });
+      const response = await axios.post(`${API_BASE}/login`, { email, password }, {
+        headers: { "Content-Type": "application/json" },
+        timeout: 90000,
+      });
       if (response.data === "User Not Found" || response.data === "Invalid Password") {
         setError(response.data);
         return;
@@ -101,10 +115,16 @@ function Login() {
       localStorage.setItem("token", response.data);
       localStorage.setItem("email", email);
       navigate("/dashboard");
-    } catch {
-      setError("Login failed. Please check your credentials and try again.");
+    } catch (err) {
+      if (err.code === "ECONNABORTED") {
+        setError("Server took too long to respond. Please try again in a moment.");
+      } else {
+        setError("Login failed. Please check your credentials and try again.");
+      }
     } finally {
+      clearTimeout(hintTimer);
       setLoading(false);
+      setSlowHint(false);
     }
   };
 
@@ -192,6 +212,19 @@ function Login() {
             >
               {loading ? 'Signing in…' : <><span>Sign In</span><ArrowRight size={16} /></>}
             </button>
+
+            {/* Cold-start hint — shown after 5s of waiting */}
+            {slowHint && (
+              <div style={{
+                background: '#F0EFFF', border: '1px solid #D8D4FF',
+                color: '#5B52A3', borderRadius: 12, padding: '0.75rem 1rem',
+                fontSize: '0.8125rem', fontWeight: 500, marginTop: '0.5rem',
+                display: 'flex', alignItems: 'center', gap: 8,
+                animation: 'fadeIn 0.3s ease',
+              }}>
+                ☕ Server is waking up (free tier). This may take 30–60s on first request…
+              </div>
+            )}
           </form>
 
           <p style={{ textAlign: 'center', marginTop: '1.75rem', color: 'var(--stone-400)', fontSize: '0.875rem' }}>

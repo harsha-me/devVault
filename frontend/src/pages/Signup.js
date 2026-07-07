@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
@@ -40,11 +40,22 @@ function Signup() {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [slowHint, setSlowHint] = useState(false);
+
+  // Pre-warm the backend while user types (Render free-tier cold start mitigation)
+  useEffect(() => {
+    axios.get(`${API_BASE}/users`, { timeout: 60000 }).catch(() => {});
+  }, []);
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSlowHint(false);
+
+    // Show a helpful hint if the server takes > 5s (Render free-tier cold start)
+    const hintTimer = setTimeout(() => setSlowHint(true), 5000);
+
     try {
       await axios.post(`${API_BASE}/signup`, { name, email, password }, {
         headers: { "Content-Type": "application/json" },
@@ -52,10 +63,16 @@ function Signup() {
       });
       navigate("/login");
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || "Network error or server is down";
-      setError(msg);
+      if (err.code === "ECONNABORTED") {
+        setError("Server took too long to respond. Please try again in a moment.");
+      } else {
+        const msg = err.response?.data?.message || err.message || "Network error or server is down";
+        setError(msg);
+      }
     } finally {
+      clearTimeout(hintTimer);
       setLoading(false);
+      setSlowHint(false);
     }
   };
 
@@ -173,6 +190,19 @@ function Signup() {
             >
               {loading ? 'Creating account…' : <><span>Create Account</span><ArrowRight size={16} /></>}
             </button>
+
+            {/* Cold-start hint — shown after 5s of waiting */}
+            {slowHint && (
+              <div style={{
+                background: '#F0EFFF', border: '1px solid #D8D4FF',
+                color: '#5B52A3', borderRadius: 12, padding: '0.75rem 1rem',
+                fontSize: '0.8125rem', fontWeight: 500, marginTop: '0.5rem',
+                display: 'flex', alignItems: 'center', gap: 8,
+                animation: 'fadeIn 0.3s ease',
+              }}>
+                ☕ Server is waking up (free tier). This may take 30–60s on first request…
+              </div>
+            )}
           </form>
 
           <p style={{ textAlign: 'center', marginTop: '1.75rem', color: 'var(--stone-400)', fontSize: '0.875rem' }}>
