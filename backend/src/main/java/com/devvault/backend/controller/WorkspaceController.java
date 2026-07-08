@@ -1,11 +1,13 @@
 package com.devvault.backend.controller;
 
+import com.devvault.backend.dto.Views;
 import com.devvault.backend.entity.Workspace;
 import com.devvault.backend.entity.WorkspaceMember;
 import com.devvault.backend.entity.Note;
 import com.devvault.backend.repository.WorkspaceRepository;
 import com.devvault.backend.repository.WorkspaceMemberRepository;
 import com.devvault.backend.repository.NoteRepository;
+import com.fasterxml.jackson.annotation.JsonView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -100,8 +102,9 @@ public class WorkspaceController {
         }
     }
 
-    // Get all notes belonging to a specific workspace
+    // Get all notes belonging to a specific workspace (Summarized payload)
     @GetMapping("/{id}/notes")
+    @JsonView(Views.Summary.class)
     public ResponseEntity<?> getWorkspaceNotes(@PathVariable Long id) {
         try {
             List<Note> notes = noteRepository.findByWorkspaceIdOrderByPinnedDescIdDesc(id);

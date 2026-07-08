@@ -148,9 +148,9 @@ function NoteCard({ note, onTogglePin, searchQuery }) {
   const noteContent = (note && note.content) || "";
   const noteTitle = (note && note.title) || "Untitled Note";
   // eslint-disable-next-line no-useless-escape
-  const preview = noteContent.replace(/```[\s\S]*?```/g, "[code]").replace(/[#*`>_~\[\]]/g, "").trim();
-  const extractedCode = extractCode(noteContent);
-  const readTime = readingTime(noteContent);
+  const preview = note.preview !== undefined && note.preview !== null ? note.preview : noteContent.replace(/```[\s\S]*?```/g, "[code]").replace(/[#*`>_~\[\]]/g, "").trim();
+  const extractedCode = note.extractedCode !== undefined ? note.extractedCode : extractCode(noteContent);
+  const readTime = note.readTime !== undefined && note.readTime !== null ? note.readTime : readingTime(noteContent);
 
   return (
     <div

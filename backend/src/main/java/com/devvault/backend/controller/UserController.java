@@ -1,6 +1,7 @@
 package com.devvault.backend.controller;
 
 import com.devvault.backend.entity.User;
+import com.devvault.backend.dto.UserSummary;
 import com.devvault.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -62,10 +63,10 @@ public class UserController {
     }
 
     @GetMapping("/users")
-    public List<User> getAllUsers() {
+    public List<UserSummary> getAllUsers() {
         logger.info("Fetching all users");
         try {
-            return userRepository.findAll();
+            return userRepository.findAllProjectedBy();
         } catch (Exception e) {
             logger.error("Error fetching users: ", e);
             throw e;

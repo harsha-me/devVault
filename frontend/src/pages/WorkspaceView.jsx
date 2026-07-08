@@ -97,10 +97,10 @@ function NoteViewCard({ note, onEdit, onDelete, onRun, onTogglePin, searchQuery 
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const noteContent = (note && note.content) || "";
   const noteTitle = (note && note.title) || "Untitled Note";
-  const hasCode = !!extractCode(noteContent);
+  const hasCode = note.extractedCode !== undefined ? !!note.extractedCode : !!extractCode(noteContent);
   // eslint-disable-next-line no-useless-escape
-  const preview = noteContent.replace(/```[\s\S]*?```/g, "[code snippet]").replace(/[#*`>_~\[\]]/g, "").trim();
-  const readTime = readingTime(noteContent);
+  const preview = note.preview !== undefined && note.preview !== null ? note.preview : noteContent.replace(/```[\s\S]*?```/g, "[code snippet]").replace(/[#*`>_~\[\]]/g, "").trim();
+  const readTime = note.readTime !== undefined && note.readTime !== null ? note.readTime : readingTime(noteContent);
 
   const exportMarkdown = (n) => {
     const blob = new Blob([`# ${n.title}\n\n${n.content}`], { type: 'text/markdown;charset=utf-8' });
@@ -250,13 +250,39 @@ function NoteViewCard({ note, onEdit, onDelete, onRun, onTogglePin, searchQuery 
           {exportMenuOpen && (
             <div style={{ position: 'absolute', bottom: '110%', right: 0, background: 'var(--ivory)', border: '1px solid var(--stone-200)', borderRadius: 12, boxShadow: '0 8px 24px rgba(74,69,64,0.14)', padding: '0.4rem', minWidth: 140, zIndex: 50 }}>
               <button
-                onClick={() => { exportMarkdown(note); setExportMenuOpen(false); }}
+                onClick={async () => {
+                  let fullNote = note;
+                  if (!note.content) {
+                    try {
+                      const res = await axios.get(`${API_BASE}/getNote/${note.id}`);
+                      fullNote = res.data;
+                    } catch (err) {
+                      alert("Failed to load note content for export");
+                      return;
+                    }
+                  }
+                  exportMarkdown(fullNote);
+                  setExportMenuOpen(false);
+                }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s' }}
               >
                 <Download size={13} /> Download .md
               </button>
               <button
-                onClick={() => { exportPDF(note); setExportMenuOpen(false); }}
+                onClick={async () => {
+                  let fullNote = note;
+                  if (!note.content) {
+                    try {
+                      const res = await axios.get(`${API_BASE}/getNote/${note.id}`);
+                      fullNote = res.data;
+                    } catch (err) {
+                      alert("Failed to load note content for export");
+                      return;
+                    }
+                  }
+                  exportPDF(fullNote);
+                  setExportMenuOpen(false);
+                }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--stone-700)', fontFamily: 'inherit', textAlign: 'left', transition: 'background 0.15s' }}
               >
                 <Download size={13} /> Export PDF
@@ -274,13 +300,29 @@ function NoteViewCard({ note, onEdit, onDelete, onRun, onTogglePin, searchQuery 
 /* ── Edit Panel for Workspace ───────────────────────────────── */
 function EditPanel({ note, onSave, onCancel }) {
   const [editTitle, setEditTitle] = useState(note.title);
-  const [editContent, setEditContent] = useState(note.content);
+  const [editContent, setEditContent] = useState("");
   const [editTags, setEditTags] = useState(note.tags ? note.tags.join(", ") : "");
   const [mode, setMode] = useState("split");
+  const [loading, setLoading] = useState(true);
   const taRef = useRef(null);
 
   const [aiOpen, setAiOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
+
+  useEffect(() => {
+    const fetchFullContent = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/getNote/${note.id}`);
+        setEditContent(res.data.content || "");
+      } catch (err) {
+        console.error("Error loading note content", err);
+        setEditContent(note.content || "");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFullContent();
+  }, [note.id, note.content]);
 
   const insertAtCursor = (before, after = "", placeholder = "") => {
     const ta = taRef.current; if (!ta) return;
@@ -348,36 +390,44 @@ function EditPanel({ note, onSave, onCancel }) {
         </div>
       )}
       <div style={{ display: 'flex', minHeight: 260 }}>
-        {(mode === 'write' || mode === 'split') && (
-          <div style={{ flex: 1, borderRight: mode === 'split' ? '1px solid var(--stone-200)' : 'none', display: 'flex', flexDirection: 'column' }}>
-            <textarea
-              ref={taRef}
-              value={editContent}
-              onChange={e => setEditContent(e.target.value)}
-              onSelect={e => {
-                const start = e.target.selectionStart;
-                const end = e.target.selectionEnd;
-                if (start !== end) {
-                  setSelectedText(e.target.value.substring(start, end));
-                } else {
-                  setSelectedText("");
-                }
-              }}
-              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', padding: '1rem 1.25rem', color: 'var(--stone-700)', fontSize: '0.875rem', fontFamily: 'monospace', lineHeight: '1.75', minHeight: 220 }}
-            />
+        {loading ? (
+          <div style={{ flex: 1, padding: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--stone-400)', fontSize: '0.875rem' }}>
+            <span>⏳ Loading note content...</span>
           </div>
-        )}
-        {(mode === 'preview' || mode === 'split') && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flex: 1, padding: '1rem 1.25rem', overflowY: 'auto', minHeight: 220 }}>
-              {editContent ? <MarkdownRenderer content={editContent} /> : <p style={{ color: 'var(--stone-300)', fontSize: '0.875rem' }}>Preview appears here…</p>}
-            </div>
-          </div>
+        ) : (
+          <>
+            {(mode === 'write' || mode === 'split') && (
+              <div style={{ flex: 1, borderRight: mode === 'split' ? '1px solid var(--stone-200)' : 'none', display: 'flex', flexDirection: 'column' }}>
+                <textarea
+                  ref={taRef}
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  onSelect={e => {
+                    const start = e.target.selectionStart;
+                    const end = e.target.selectionEnd;
+                    if (start !== end) {
+                      setSelectedText(e.target.value.substring(start, end));
+                    } else {
+                      setSelectedText("");
+                    }
+                  }}
+                  style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', padding: '1rem 1.25rem', color: 'var(--stone-700)', fontSize: '0.875rem', fontFamily: 'monospace', lineHeight: '1.75', minHeight: 220 }}
+                />
+              </div>
+            )}
+            {(mode === 'preview' || mode === 'split') && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, padding: '1rem 1.25rem', overflowY: 'auto', minHeight: 220 }}>
+                  {editContent ? <MarkdownRenderer content={editContent} /> : <p style={{ color: 'var(--stone-300)', fontSize: '0.875rem' }}>Preview appears here…</p>}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
       <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--stone-200)', display: 'flex', gap: '0.625rem', justifyContent: 'flex-end', background: 'var(--stone-50)' }}>
         <button onClick={onCancel} className="dv-btn dv-btn-ghost" style={{ padding: '8px 18px', borderRadius: 10 }}>Cancel</button>
-        <button onClick={() => onSave(editTitle, editContent, editTags)} className="dv-btn dv-btn-primary" style={{ padding: '8px 20px', borderRadius: 10 }}>💾 Save Changes</button>
+        <button onClick={() => onSave(editTitle, editContent, editTags)} disabled={loading} className="dv-btn dv-btn-primary" style={{ padding: '8px 20px', borderRadius: 10 }}>💾 Save Changes</button>
       </div>
       <AiCompanion
         isOpen={aiOpen}
@@ -683,7 +733,7 @@ function WorkspaceView() {
                         editingId === n.id ? (
                           <EditPanel key={n.id} note={n} onSave={(title, content, tags) => handleUpdateNote(n.id, title, content, tags)} onCancel={() => setEditingId(null)} />
                         ) : (
-                          <NoteViewCard key={n.id} note={n} onEdit={() => setEditingId(n.id)} onDelete={() => handleDeleteNote(n.id)} onRun={() => { const code = extractCode(n.content); if (code) navigate('/compiler', { state: { code } }); }} onTogglePin={() => handleTogglePin(n.id)} searchQuery={search} />
+                          <NoteViewCard key={n.id} note={n} onEdit={() => setEditingId(n.id)} onDelete={() => handleDeleteNote(n.id)} onRun={() => { const code = n.extractedCode || extractCode(n.content); if (code) navigate('/compiler', { state: { code } }); }} onTogglePin={() => handleTogglePin(n.id)} searchQuery={search} />
                         )
                       )}
                     </div>
@@ -699,7 +749,7 @@ function WorkspaceView() {
                         editingId === n.id ? (
                           <EditPanel key={n.id} note={n} onSave={(title, content, tags) => handleUpdateNote(n.id, title, content, tags)} onCancel={() => setEditingId(null)} />
                         ) : (
-                          <NoteViewCard key={n.id} note={n} onEdit={() => setEditingId(n.id)} onDelete={() => handleDeleteNote(n.id)} onRun={() => { const code = extractCode(n.content); if (code) navigate('/compiler', { state: { code } }); }} onTogglePin={() => handleTogglePin(n.id)} searchQuery={search} />
+                          <NoteViewCard key={n.id} note={n} onEdit={() => setEditingId(n.id)} onDelete={() => handleDeleteNote(n.id)} onRun={() => { const code = n.extractedCode || extractCode(n.content); if (code) navigate('/compiler', { state: { code } }); }} onTogglePin={() => handleTogglePin(n.id)} searchQuery={search} />
                         )
                       )}
                     </div>

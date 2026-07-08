@@ -1,7 +1,9 @@
 package com.devvault.backend.controller;
 
 import com.devvault.backend.entity.Note;
+import com.devvault.backend.dto.Views;
 import com.devvault.backend.repository.NoteRepository;
+import com.fasterxml.jackson.annotation.JsonView;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ public class NoteController {
     private NoteRepository noteRepository;
 
     @PostMapping("/addNote")
+    @JsonView(Views.Full.class)
     public ResponseEntity<?> addNote(@RequestBody Note note) {
         logger.info("Adding note for email: {}", note.getEmail());
         try {
@@ -32,8 +35,9 @@ public class NoteController {
         }
     }
 
-    // Returns notes sorted: pinned first, then newest first
+    // Returns notes sorted: pinned first, then newest first (Summarized payload)
     @GetMapping("/getNotes/{email}")
+    @JsonView(Views.Summary.class)
     public ResponseEntity<?> getNotes(@PathVariable String email) {
         logger.info("Fetching notes for email: {}", email);
         try {
@@ -43,6 +47,23 @@ public class NoteController {
         } catch (Exception e) {
             logger.error("Error fetching notes for email {}: ", email, e);
             return ResponseEntity.status(500).body("Error fetching notes: " + e.getMessage());
+        }
+    }
+
+    // Returns full details of a single note
+    @GetMapping("/getNote/{id}")
+    @JsonView(Views.Full.class)
+    public ResponseEntity<?> getNote(@PathVariable Long id) {
+        logger.info("Fetching full details for note id: {}", id);
+        try {
+            Note note = noteRepository.findById(id).orElse(null);
+            if (note != null) {
+                return ResponseEntity.ok(note);
+            }
+            return ResponseEntity.status(404).body("Note not found");
+        } catch (Exception e) {
+            logger.error("Error fetching note: ", e);
+            return ResponseEntity.status(500).body("Error fetching note: " + e.getMessage());
         }
     }
 
@@ -59,6 +80,7 @@ public class NoteController {
     }
 
     @PutMapping("/updateNote/{id}")
+    @JsonView(Views.Full.class)
     public ResponseEntity<?> updateNote(@PathVariable Long id, @RequestBody Note updatedNote) {
         logger.info("Updating note with id: {}", id);
         try {
@@ -78,6 +100,7 @@ public class NoteController {
 
     // Toggle pin state — flips pinned boolean and persists
     @PutMapping("/togglePin/{id}")
+    @JsonView(Views.Summary.class)
     public ResponseEntity<?> togglePin(@PathVariable Long id) {
         logger.info("Toggling pin for note with id: {}", id);
         try {
