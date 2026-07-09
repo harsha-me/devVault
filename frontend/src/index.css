@@ -401,3 +401,61 @@ body {
     top: 56px !important; /* Positions it below the 56px high mobile header */
   }
 }
+
+/* ── Weather & Dashboard Sidebar Layout ── */
+@media (min-width: 1024px) {
+  .dashboard-grid-container {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 2rem !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+  }
+  .dashboard-main-column {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  .dashboard-sidebar-column {
+    width: 360px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .dashboard-grid-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    width: 100% !important;
+  }
+  .dashboard-main-column {
+    width: 100% !important;
+  }
+  .dashboard-sidebar-column {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+}
+
+/* weather forecast scroll layout */
+.forecast-scroll-container::-webkit-scrollbar {
+  height: 4px;
+}
+.forecast-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--stone-200);
+  border-radius: 4px;
+}
+
+/* animated weather icon pulsing */
+.weather-icon-pulse {
+  animation: weatherPulse 4s ease-in-out infinite;
+}
+@keyframes weatherPulse {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.05); }
+}

@@ -10,6 +10,9 @@ import { ChevronRight, Zap, Pin, PinOff, Sparkles } from "lucide-react";
 import * as calendarService from "../services/calendarService";
 import Sidebar from "../components/Sidebar";
 import AiCompanion from "../components/AiCompanion";
+import WeatherCard from "../components/weather/WeatherCard";
+import { getWeatherIcon } from "../components/weather/WeatherForecast";
+
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:8080";
 
@@ -273,6 +276,9 @@ function Dashboard() {
   const email       = localStorage.getItem("email");
   const textareaRef = useRef(null);
   const titleInputRef = useRef(null);
+  const navigate    = useNavigate();
+  const [currentWeather,     setCurrentWeather]     = useState(null);
+
 
   const [title,              setTitle]              = useState("");
   const [content,            setContent]            = useState("");
@@ -456,7 +462,17 @@ function Dashboard() {
     return matchesSearch && matchesTag;
   });
 
-  /* Split pinned vs unpinned */
+  const maxScoreTarget = 50;
+  const prodScore = (notes?.length || 0) + (dashboardReminders?.today?.length || 0) + (dashboardReminders?.upcoming?.length || 0);
+  const scorePercentage = Math.min(Math.round((prodScore / maxScoreTarget) * 100), 100);
+
+  const isRainyDay = currentWeather && (currentWeather.conditionIcon === 'rainy' || currentWeather.conditionIcon === 'stormy');
+  const outdoorKeywords = ['outdoor', 'outside', 'park', 'run', 'walk', 'commute', 'coffee', 'meetup', 'lunch', 'travel'];
+  const outdoorRemindersToday = (dashboardReminders?.today || []).filter(rem => {
+    const text = ((rem.title || '') + ' ' + (rem.description || '')).toLowerCase();
+    return outdoorKeywords.some(keyword => text.includes(keyword));
+  });
+
   const pinnedNotes   = filteredNotes.filter(n => n.pinned);
   const unpinnedNotes = filteredNotes.filter(n => !n.pinned);
 
@@ -486,8 +502,19 @@ function Dashboard() {
               <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--stone-900)', letterSpacing: '-0.025em', marginBottom: '0.25rem', lineHeight: 1.2 }}>
                 {greeting}, {firstName} {timeEmoji}
               </h1>
-              <p style={{ color: 'var(--stone-400)', fontSize: '0.875rem' }}>
-                {dateLabel} · {notes.length} note{notes.length !== 1 ? 's' : ''} in your vault
+              <p style={{ color: 'var(--stone-400)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span>{dateLabel}</span>
+                <span>·</span>
+                <span>{notes.length} note{notes.length !== 1 ? 's' : ''} in your vault</span>
+                {currentWeather && (
+                  <>
+                    <span>·</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent)', fontWeight: 700 }}>
+                      {getWeatherIcon(currentWeather.conditionIcon, 14)}
+                      {Math.round(currentWeather.tempC)}°C, {currentWeather.conditionText} in {currentWeather.city}
+                    </span>
+                  </>
+                )}
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -517,8 +544,12 @@ function Dashboard() {
             ))}
           </div>
 
-          {/* ── Note Editor ── */}
-          <div className="dv-card" style={{ marginBottom: '2.25rem', overflow: 'hidden' }}>
+          {/* ── Grid Container ── */}
+          <div className="dashboard-grid-container">
+            {/* Left Column: Note Editor and Note lists */}
+            <div className="dashboard-main-column">
+              {/* ── Note Editor ── */}
+              <div className="dv-card" style={{ marginBottom: '2.25rem', overflow: 'hidden' }}>
 
             <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--stone-200)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--stone-50)', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -809,6 +840,193 @@ function Dashboard() {
               <p style={{ color: 'var(--stone-300)', fontSize: '0.825rem', marginTop: '0.5rem' }}>Your vault is ready and waiting 🌿</p>
             </div>
           )}
+            </div> {/* Close Left Column (dashboard-main-column) */}
+
+            {/* Right Column: Workspace Summary & Weather Sidebar */}
+            <div className="dashboard-sidebar-column">
+              
+              {/* 1. Productivity Score Card */}
+              <div className="dv-card dv-fade-up" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🏆</span>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--stone-900)', margin: 0 }}>Productivity Score</h3>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginTop: '0.25rem' }}>
+                  <div style={{ position: 'relative', width: '70px', height: '70px', flexShrink: 0 }}>
+                    <svg width="70" height="70" viewBox="0 0 36 36">
+                      <path
+                        className="circle-bg"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        stroke="var(--stone-100)"
+                        strokeWidth="3.5"
+                      />
+                      <path
+                        className="circle"
+                        strokeDasharray={`${scorePercentage}, 100`}
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        stroke="var(--accent)"
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                      />
+                    </svg>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--stone-900)', lineHeight: 1 }}>{prodScore}</span>
+                      <span style={{ fontSize: '0.55rem', fontWeight: 600, color: 'var(--stone-400)' }}>pts</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--stone-700)' }}>
+                      {scorePercentage === 100 ? 'Peak Productivity! 🚀' : scorePercentage >= 75 ? 'Excellent focus! 🌟' : scorePercentage >= 50 ? 'Steady builder 🌿' : 'Getting started 🌱'}
+                    </div>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--stone-400)', margin: '4px 0 0 0', lineHeight: 1.3 }}>
+                      Based on {notes.length} notes & {dashboardReminders.today.length + dashboardReminders.upcoming.length} active schedule items. Keep building!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Weather Card */}
+              <WeatherCard onWeatherChange={(w) => setCurrentWeather(w)} />
+
+              {/* 3. Upcoming Reminders Card */}
+              <div className="dv-card dv-fade-up" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1.1rem' }}>📅</span>
+                    <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--stone-900)', margin: 0 }}>Schedule & Reminders</h3>
+                  </div>
+                  <button 
+                    onClick={() => navigate('/calendar')}
+                    style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Open Calendar
+                  </button>
+                </div>
+
+                {/* Outdoor Rain Warning Alert banner */}
+                {isRainyDay && outdoorRemindersToday.length > 0 && (
+                  <div style={{
+                    background: 'var(--danger-light)',
+                    border: '1px solid #FDDCC4',
+                    borderRadius: '12px',
+                    padding: '8px 12px',
+                    fontSize: '0.72rem',
+                    color: 'var(--danger)',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '6px',
+                    animation: 'dvFadeIn 0.3s ease',
+                    lineHeight: 1.3
+                  }}>
+                    <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>🌧️</span>
+                    <div>
+                      <div style={{ fontWeight: 800 }}>Outdoor Plans Warning!</div>
+                      <div style={{ fontWeight: 500, marginTop: '2px', opacity: 0.9 }}>
+                        Rain is expected today. Note: You have outdoor plans: "{outdoorRemindersToday.map(r => r.title).join(', ')}".
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.25rem' }}>
+                  {/* Today's Schedule */}
+                  <div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--stone-400)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
+                      Today
+                    </div>
+                    {dashboardReminders.today.length === 0 ? (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--stone-400)', padding: '6px 8px', fontStyle: 'italic' }}>
+                        No tasks for today. Cozy coding time! ☕
+                      </div>
+                    ) : (
+                      dashboardReminders.today.map(rem => (
+                        <div key={rem.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: rem.reminderColor || 'rgba(0,0,0,0.02)',
+                          borderLeft: `3px solid ${rem.priority === 'High' ? 'var(--danger)' : rem.priority === 'Medium' ? 'var(--warning)' : 'var(--success)'}`,
+                          marginBottom: '4px'
+                        }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--stone-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rem.title}</span>
+                            {rem.time && <span style={{ fontSize: '0.625rem', color: 'var(--stone-500)', fontWeight: 600 }}>⏰ {rem.time}</span>}
+                          </div>
+                          {rem.priority && (
+                            <span style={{
+                              fontSize: '0.58rem',
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: '8px',
+                              background: rem.priority === 'High' ? 'var(--danger-light)' : rem.priority === 'Medium' ? 'var(--warning-light)' : 'var(--success-light)',
+                              color: rem.priority === 'High' ? 'var(--danger)' : rem.priority === 'Medium' ? 'var(--warning)' : 'var(--success)',
+                              flexShrink: 0
+                            }}>
+                              {rem.priority}
+                            </span>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Upcoming Schedule */}
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--stone-400)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px' }}>
+                      Upcoming
+                    </div>
+                    {dashboardReminders.upcoming.length === 0 ? (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--stone-400)', padding: '6px 8px', fontStyle: 'italic' }}>
+                        Schedule is clear.
+                      </div>
+                    ) : (
+                      dashboardReminders.upcoming.slice(0, 3).map(rem => (
+                        <div key={rem.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: 'rgba(255,255,255,0.4)',
+                          border: '1px solid var(--stone-200)',
+                          marginBottom: '4px'
+                        }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--stone-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rem.title}</span>
+                            <span style={{ fontSize: '0.625rem', color: 'var(--stone-400)', fontWeight: 600 }}>
+                              📅 {new Date(rem.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {rem.time ? ` · ⏰ ${rem.time}` : ''}
+                            </span>
+                          </div>
+                          {rem.priority && (
+                            <span style={{
+                              fontSize: '0.58rem',
+                              fontWeight: 800,
+                              padding: '1px 6px',
+                              borderRadius: '8px',
+                              background: rem.priority === 'High' ? 'var(--danger-light)' : rem.priority === 'Medium' ? 'var(--warning-light)' : 'var(--success-light)',
+                              color: rem.priority === 'High' ? 'var(--danger)' : rem.priority === 'Medium' ? 'var(--warning)' : 'var(--success)',
+                              flexShrink: 0
+                            }}>
+                              {rem.priority}
+                            </span>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
       </main>
     </div>
