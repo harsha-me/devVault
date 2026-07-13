@@ -17,15 +17,27 @@
 * Supports multiple programming languages.
 * Fast, lightweight in-app code execution console.
 
-### 3. 👥 Collaborative Note Sharing
+### 3. 🤖 AI Code Companion & Explainer
+* Integrated AI assistant powered by **Gemini API** to explain complex code blocks, suggest optimizations, and find bugs in stored notes.
+* Context-aware sidebars inside note details and workspaces for seamless natural language interactions.
+
+### 4. 👥 Collaborative Vault Spaces (Workspaces)
+* Dedicated workspace channels to create shared developer environments.
+* Invite team members by email and collaborate on notes and code snippets in unified workspace feeds.
+
+### 5. 🌤️ Smart Weather Dashboard & Workspace Integration
+* Live weather dashboard integrated into the main developer panel.
+* Queries real-time weather and 5-day forecasts via location coordinates or search, adapting developer schedules to current local conditions.
+
+### 6. 👥 Collaborative Note Sharing
 * Share your notes and code snippets with other developers via email.
 * Shared notes section for incoming collaboration.
 
-### 4. 📅 Developer Calendar & Tasks
+### 7. 📅 Developer Calendar & Tasks
 * Schedule deadlines, set coding task reminders, and track milestones.
 * Unified view of your upcoming schedule.
 
-### 5. 📊 Premium Activity Dashboard & Profile
+### 8. 📊 Premium Activity Dashboard & Profile
 * Tracks total notes, shared items, and reminders.
 * Calculates a personal **Productivity Score** dynamically.
 * Beautiful user profiles with avatar support, member-since metrics, and account actions.
@@ -36,13 +48,14 @@
 
 ### Frontend
 * **Core:** React.js, JavaScript (ES6+)
-* **Styling:** Custom modern CSS, glassmorphism, responsive grids
+* **Styling:** Custom modern CSS, glassmorphism, responsive grids, TailwindCSS (for utility layout components)
 * **Libraries:** React Router, React Markdown (with syntax highlighters)
 
 ### Backend
 * **Core:** Spring Boot, Java 17
 * **Database Integration:** Spring Data JPA, Hibernate ORM
 * **Security:** Spring Security (password hashing, stateless configurations)
+* **Integrations:** Google Gemini API (AI Companion), weatherapi (Smart Weather Service)
 * **Optimization:** Hikari Connection Pooling (warmed-up connections, keepalive pings)
 
 ### Database
@@ -121,25 +134,21 @@ DevVault/
 
 ## 🗺️ Future Roadmap (Upcoming Features)
 
-We are constantly working to expand the capabilities of DevVault. Here are 5 major features planned for the future:
+We are constantly working to expand the capabilities of DevVault. Here are 4 major features planned for the future:
 
-### 1. 🤖 AI Code Companion & Explainer
-* Integrated AI assistant powered by Gemini API to explain complex code blocks, suggest optimizations, and find bugs in stored notes.
-* Natural language code generation directly into the note editor.
-
-### 2. ⚡ Live Multiplayer Code Collaboration (WebSockets)
+### 1. ⚡ Live Multiplayer Code Collaboration (WebSockets)
 * Real-time document and code editing with live cursor tracking, allowing multiple developers to collaborate on the same note or compile code simultaneously.
 * High-speed WebSockets integration for instantaneous updates.
 
-### 3. ⏱️ Note Version Control & History
+### 2. ⏱️ Note Version Control & History
 * Commit-history style tracking for snippets and notes.
 * View changes over time, trace diffs, and rollback notes to earlier versions.
 
-### 4. 📴 Offline-First Mode with Background Sync
+### 3. 📴 Offline-First Mode with Background Sync
 * Save, edit, and run code offline using IndexedDB local storage.
 * Auto-syncing background workers that update your cloud database (Aiven) as soon as internet connection is restored.
 
-### 5. 🌐 API Sandbox & Endpoint Tester
+### 4. 🌐 API Sandbox & Endpoint Tester
 * Built-in HTTP client (similar to Postman) to construct, test, and run API requests directly from the app.
 * Seamlessly store API request configurations and JSON payloads as executable documentation.
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, Inbox, CalendarDays, Code2, LogOut, User, FolderKanban, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, Inbox, CalendarDays, Code2, LogOut, User, FolderKanban, Menu, X, Gamepad2 } from 'lucide-react';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard',  path: '/dashboard' },
@@ -9,6 +9,7 @@ const navItems = [
   { icon: Inbox,           label: 'Inbox',      path: '/received-notes' },
   { icon: CalendarDays,    label: 'Calendar',   path: '/calendar' },
   { icon: Code2,           label: 'Compiler',   path: '/compiler' },
+  { icon: Gamepad2,        label: 'Mini Games', path: '/games' },
   { icon: User,            label: 'Profile',    path: '/profile' },
 ];
 

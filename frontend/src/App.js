@@ -10,6 +10,9 @@ import Calendar from "./pages/Calendar";
 import Profile from "./pages/Profile";
 import Workspaces from "./pages/Workspaces";
 import WorkspaceView from "./pages/WorkspaceView";
+import GamesDashboard from "./pages/games/GamesDashboard";
+import TicTacToe from "./pages/games/tictactoe/TicTacToe";
+import GameHistory from "./pages/games/GameHistory";
 
 function App() {
   return (
@@ -27,6 +30,9 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/workspaces" element={<Workspaces />} />
         <Route path="/workspace/:id" element={<WorkspaceView />} />
+        <Route path="/games" element={<GamesDashboard />} />
+        <Route path="/games/tic-tac-toe" element={<TicTacToe />} />
+        <Route path="/games/history" element={<GameHistory />} />
       </Routes>
     </BrowserRouter>
   );
