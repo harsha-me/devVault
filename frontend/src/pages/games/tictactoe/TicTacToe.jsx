@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar';
 import { gameService } from '../../../services/gameService';
-import { ArrowLeft, RefreshCw, Undo2, LogOut, ChevronRight, Play } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Undo2, LogOut, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function TicTacToe() {
@@ -56,6 +56,7 @@ function TicTacToe() {
     if (email) {
       fetchStats();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email, gameState]);
 
   // Start Timer when game begins (on first move)

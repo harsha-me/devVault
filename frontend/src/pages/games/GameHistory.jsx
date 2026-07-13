@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
 import { gameService } from '../../services/gameService';
 import TicTacToeReplay from './tictactoe/TicTacToeReplay';
-import { ArrowLeft, Trash2, Play, Trophy, Sparkles, Flame, Percent, Activity, Trash } from 'lucide-react';
+import { ArrowLeft, Trash2, Play, Trophy, Flame, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function GameHistory() {

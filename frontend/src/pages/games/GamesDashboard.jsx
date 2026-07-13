@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
-import { Gamepad2, Trophy, Clock, Lock } from 'lucide-react';
+import { Trophy, Lock } from 'lucide-react';
 
 function GamesDashboard() {
   const token = localStorage.getItem('token');
