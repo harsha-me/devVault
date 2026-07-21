@@ -76,5 +76,24 @@ public class DatabaseSchemaConfig implements CommandLineRunner {
         } catch (Exception e) {
             logger.info("Note.workspace_id column already exists: {}", e.getMessage());
         }
+
+        try {
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS document_history (" +
+                    "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                    "email VARCHAR(255) NOT NULL," +
+                    "operation VARCHAR(100) NOT NULL," +
+                    "input_file_name VARCHAR(255)," +
+                    "output_file_name VARCHAR(255)," +
+                    "storage_path VARCHAR(255) NOT NULL," +
+                    "date DATE NOT NULL," +
+                    "time TIME NOT NULL," +
+                    "file_size BIGINT NOT NULL," +
+                    "processing_time_ms BIGINT NOT NULL," +
+                    "status VARCHAR(50) NOT NULL" +
+                    ")");
+            logger.info("Successfully ensured document_history table exists");
+        } catch (Exception e) {
+            logger.warn("Could not create document_history table: {}", e.getMessage());
+        }
     }
 }

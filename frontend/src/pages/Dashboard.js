@@ -6,7 +6,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import { ChevronRight, Zap, Pin, PinOff, Sparkles } from "lucide-react";
+import { ChevronRight, Zap, Pin, PinOff, Sparkles, Download } from "lucide-react";
 import * as calendarService from "../services/calendarService";
 import Sidebar from "../components/Sidebar";
 import AiCompanion from "../components/AiCompanion";
@@ -278,6 +278,16 @@ function Dashboard() {
   const titleInputRef = useRef(null);
   const navigate    = useNavigate();
   const [currentWeather,     setCurrentWeather]     = useState(null);
+  const [docStats,           setDocStats]           = useState(null);
+
+  const fetchDocStats = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/tools/stats/${email}`);
+      setDocStats(res.data);
+    } catch (e) {
+      console.log("Error fetching document stats", e);
+    }
+  }, [email]);
 
 
   const [title,              setTitle]              = useState("");
@@ -323,10 +333,16 @@ function Dashboard() {
   }, [email]);
 
   useEffect(() => {
-    if (token && email) { fetchNotes(); fetchUnreadCount(); fetchReminders(); fetchWorkspaces(); }
+    if (token && email) { 
+      fetchNotes(); 
+      fetchUnreadCount(); 
+      fetchReminders(); 
+      fetchWorkspaces(); 
+      fetchDocStats();
+    }
     const iv = setInterval(fetchUnreadCount, 5000);
     return () => clearInterval(iv);
-  }, [token, email, fetchNotes, fetchUnreadCount, fetchReminders, fetchWorkspaces]);
+  }, [token, email, fetchNotes, fetchUnreadCount, fetchReminders, fetchWorkspaces, fetchDocStats]);
 
   /* ── Keyboard shortcuts ── */
   useEffect(() => {
@@ -1024,6 +1040,68 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* 4. Document Toolkit Widget */}
+              {docStats && (
+                <div className="dv-card dv-fade-up" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.1rem' }}>📄</span>
+                      <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--stone-900)', margin: 0 }}>Document Toolkit</h3>
+                    </div>
+                    <button 
+                      onClick={() => navigate('/tools')}
+                      style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                    >
+                      Open Toolkit
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: 'var(--stone-50)', padding: '10px', borderRadius: '12px', border: '1px solid var(--stone-200)' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--stone-400)', textTransform: 'uppercase' }}>Conversions</div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--stone-900)' }}>{docStats.totalConversions}</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--stone-400)', textTransform: 'uppercase' }}>Today</div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--stone-900)' }}>{docStats.convertedToday}</div>
+                    </div>
+                  </div>
+
+                  {docStats.recentActivity && docStats.recentActivity.length > 0 ? (
+                    <div>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--stone-400)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>
+                        Recent Operations
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {docStats.recentActivity.slice(0, 3).map((act) => (
+                          <div key={act.id} style={{ display: 'flex', justifyItems: 'space-between', alignItems: 'center', fontSize: '0.72rem', background: 'var(--cream)', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--stone-200)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                              <span style={{ fontWeight: 700, color: 'var(--stone-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {act.outputFileName || act.operation}
+                              </span>
+                              <span style={{ fontSize: '0.58rem', color: 'var(--stone-400)' }}>
+                                {act.operation}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => window.open(`${API_BASE}/tools/download/${act.id}`, '_blank')}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: 2, display: 'flex', alignItems: 'center' }}
+                              title="Download document"
+                            >
+                              <Download size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--stone-400)', textAlign: 'center', fontStyle: 'italic', padding: '10px 0' }}>
+                      No recent activities.
+                    </div>
+                  )}
+                </div>
+              )}
 
             </div>
           </div>

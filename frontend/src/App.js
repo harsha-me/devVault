@@ -13,6 +13,7 @@ import WorkspaceView from "./pages/WorkspaceView";
 import GamesDashboard from "./pages/games/GamesDashboard";
 import TicTacToe from "./pages/games/tictactoe/TicTacToe";
 import GameHistory from "./pages/games/GameHistory";
+import DocumentToolkit from "./pages/DocumentToolkit";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         <Route path="/games" element={<GamesDashboard />} />
         <Route path="/games/tic-tac-toe" element={<TicTacToe />} />
         <Route path="/games/history" element={<GameHistory />} />
+        <Route path="/tools" element={<DocumentToolkit />} />
       </Routes>
     </BrowserRouter>
   );
