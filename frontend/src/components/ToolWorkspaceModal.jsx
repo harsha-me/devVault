@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, FileText, Sparkles, Image, CheckCircle, RotateCw, Plus, Trash2, ArrowRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Upload, FileText, Sparkles, Image, Plus, Trash2, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 

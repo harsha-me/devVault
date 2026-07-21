@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import ToolWorkspaceModal from '../components/ToolWorkspaceModal';
 import * as docService from '../services/documentService';
-import { Search, SlidersHorizontal, Download, Trash2, Calendar, FileType, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, SlidersHorizontal, Download, Trash2, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const TOOLS_LIST = [
