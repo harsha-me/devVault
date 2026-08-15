@@ -89,9 +89,11 @@ function Login() {
   const [showPass,    setShowPass]    = useState(false);
   const [slowHint,    setSlowHint]    = useState(false);
 
-  // Pre-warm the backend while user types (Render free-tier cold start mitigation)
+  // Pre-warm the backend while user types (Render free-tier cold start mitigation).
+  // Hits the lightweight /health endpoint (no DB query) instead of /users, so the
+  // warm-up ping stays fast and cheap even as the user table grows.
   useEffect(() => {
-    axios.get(`${API_BASE}/users`, { timeout: 60000 }).catch(() => {});
+    axios.get(`${API_BASE}/health`, { timeout: 60000 }).catch(() => {});
   }, []);
 
   const handleLogin = async (e) => {
